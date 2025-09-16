@@ -1,0 +1,23 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+For this project, you are tasked with building a voice-enabled browser automation agent that listens to natural speech, converts it into structured commands, and executes them inside a real browser session. Your system should leverage speech-to-text for transcription, an intent parser to transform spoken language into structured JSON instructions, and Browserbase for reliable headless browser automation.
+
+Your assistant should support multi-step workflows such as searching, filtering, navigating, filling forms, extracting data, and summarizing results, while maintaining context across turns. Responses should be returned via text-to-speech and accompanied by screenshots or extracted results for transparency.
+
+Project Requirements:
+
+Implement an end-to-end pipeline that captures audio input, performs speech-to-text transcription, parses commands into structured intents, and maps them to browser automation actions
+Integrate Browserbase with Playwright/Puppeteer to handle navigation, selectors, dynamic rendering, and session persistence
+Support context awareness so the system can handle follow-up commands (“Sort by price,” “open the second result”) and confirm risky actions (“Proceed to checkout?”)
+Provide a feedback layer with text-to-speech summaries and a status panel or CLI that logs the transcript, parsed command JSON, live execution steps, and captured screenshots
+Export results as structured JSON or CSV (e.g., extracted product tables) and archive session artifacts for later inspection
+Challenges:
+
+Achieve robust transcription and intent parsing in noisy environments, implement confirmation loops when confidence is low
+Handle fragile or changing DOM structures by using semantic selectors first and ML-assisted fallback when needed
+Manage error recovery: retry failed actions, backtrack a step, or ask clarifying questions
+Implement guardrails for sensitive operations (login, checkout, data entry), requiring explicit user confirmation before execution
