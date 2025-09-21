@@ -1,47 +1,190 @@
-# 🤘 Welcome to Stagehand Next.js!
+# 🎤 Voice Browser Agent
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbrowserbase%2Fstagehand-nextjs-quickstart&env=BROWSERBASE_API_KEY,BROWSERBASE_PROJECT_ID,OPENAI_API_KEY&envDescription=Browserbase%20credentials%20%2B%20OpenAI.%20You%20can%20configure%20your%20project%20to%20use%20Anthropic%20or%20a%20custom%20LLMClient%20in%20stagehand.config.ts&project-name=stagehand-nextjs&repository-name=stagehand-nextjs)
+An AI-powered voice-controlled browser automation system that converts speech to structured commands and executes them using browser automation.
 
-Hey! This is a Next.js project built with [Stagehand](https://github.com/browserbase/stagehand).
+## Features
 
-You can build your own web agent using: `npx create-browser-app`!
+- **Speech-to-Text**: Real-time voice transcription using Deepgram
+- **Intent Parsing**: AI-powered command understanding with Claude
+- **Browser Automation**: Execute actions using Stagehand + Playwright
+- **Context Memory**: Session persistence with Mem0
+- **Security Guardrails**: Confirmation prompts for sensitive actions
+- **Real-time Feedback**: Live status updates and screenshots
 
-## Setting the Stage
+## Tech Stack
 
-Stagehand is an SDK for automating browsers. It's built on top of [Playwright](https://playwright.dev/) and provides a higher-level API for better debugging and AI fail-safes.
+- **Frontend**: Next.js 14, Tailwind CSS, shadcn/ui
+- **Speech Processing**: Deepgram Streaming API
+- **AI Integration**: Anthropic Claude via Vercel AI SDK
+- **Browser Automation**: Browserbase + Playwright + Stagehand
+- **Memory**: Mem0 for conversation context
+- **Deployment**: Vercel
 
-## Curtain Call
+## Quick Start
 
-Get ready for a show-stopping development experience. Just run:
+1. **Clone and install dependencies**:
+   ```bash
+   git clone <repository-url>
+   cd Voice_Browser_Agent
+   pnpm install
+   ```
 
-```bash
-npm install && npm run dev
+2. **Set up environment variables**:
+   ```bash
+   cp .env.example .env.local
+   # Add your API keys to .env.local (see Environment Setup below)
+   ```
+
+3. **Start the development server**:
+   ```bash
+   pnpm dev
+   ```
+
+4. **Open your browser** and navigate to `http://localhost:3000`
+
+## Environment Setup
+
+### Required API Keys
+
+#### 1. Deepgram API Key (Required)
+- Sign up at [Deepgram](https://deepgram.com/)
+- Get your API key from the dashboard
+- Add to `.env.local`: `DEEPGRAM_API_KEY=your_deepgram_api_key_here`
+
+#### 2. Anthropic API Key (Required)
+- Sign up at [Anthropic](https://www.anthropic.com/)
+- Get your API key from the console
+- Add to `.env.local`: `ANTHROPIC_API_KEY=your_anthropic_api_key_here`
+
+#### 3. Browserbase API Key (Optional but Recommended)
+- Sign up at [Browserbase](https://www.browserbase.com/)
+- Get your API key and project ID from the dashboard
+- Add to `.env.local`:
+  ```
+  BROWSERBASE_API_KEY=your_browserbase_api_key_here
+  BROWSERBASE_PROJECT_ID=your_browserbase_project_id_here
+  ```
+
+#### 4. Mem0 API Key (Optional)
+- Sign up at [Mem0](https://mem0.ai/)
+- Get your API key from the dashboard
+- Add to `.env.local`: `MEM0_API_KEY=your_mem0_api_key_here`
+
+### Environment File Setup
+
+1. Create a `.env.local` file in the project root:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. Fill in your API keys in `.env.local`
+
+3. Restart your development server:
+   ```bash
+   pnpm dev
+   ```
+
+## Usage
+
+### Voice Commands
+
+Try these voice commands to get started:
+
+- **Navigation**: "Navigate to google.com"
+- **Clicking**: "Click the search button"
+- **Typing**: "Type hello world"
+- **Scrolling**: "Scroll down"
+- **Searching**: "Search for artificial intelligence"
+- **Screenshots**: "Take a screenshot"
+- **Data Extraction**: "Extract all the links from this page"
+
+### UI Features
+
+- **Voice Control Tab**: Record voice commands and see real-time transcription
+- **Action Status Tab**: Monitor executed actions with timestamps and results
+- **Screenshots Tab**: View screenshots captured during actions
+- **Confirmation Modal**: Review sensitive actions before execution
+
+## Project Structure
+
+```
+Voice_Browser_Agent/
+├── app/
+│   ├── api/                    # API routes
+│   │   ├── stt/               # Speech-to-text endpoint
+│   │   ├── intent/            # Intent parsing endpoint
+│   │   └── actions/           # Browser action execution
+│   ├── (agent)/               # Agent logic
+│   │   ├── actions.ts         # Action handlers
+│   │   └── executor.ts        # Browser executor
+│   ├── layout.tsx             # Root layout
+│   └── page.tsx               # Main UI
+├── components/
+│   ├── mic/                   # Microphone components
+│   ├── status/                # Status panel components
+│   ├── modals/                # Confirmation modals
+│   └── ui/                    # shadcn/ui components
+├── lib/                       # Utilities and clients
+│   ├── schema.ts              # Zod schemas
+│   ├── env.ts                 # Environment validation
+│   ├── deepgram.ts            # Deepgram client
+│   ├── ai.ts                  # AI client
+│   └── mem0.ts                # Memory client
+└── Docs/                      # Documentation
+    ├── Implementation.md      # Implementation plan
+    ├── project_structure.md  # Project structure guide
+    └── UI_UX_doc.md          # UI/UX specifications
 ```
 
-## What's Next?
+## Development
 
-### Add your API keys
+### Available Scripts
 
-This project defaults to using OpenAI, so it's going to throw a fit if you don't have an OpenAI API key.
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm lint` - Run ESLint
 
-To use Anthropic (or other LLMs), you'll need to edit [stagehand.config.ts](stagehand.config.ts) to use the appropriate API key.
+### Architecture
 
-You'll also want to set your Browserbase API key and project ID to run this project in the cloud.
+The application follows a modular architecture:
 
-```bash
-cp .example.env .env # Add your API keys to .env
-```
+1. **Speech-to-Text**: Captures audio and sends to Deepgram for transcription
+2. **Intent Parsing**: Uses Claude to convert speech into structured commands
+3. **Action Execution**: Executes browser actions using Stagehand with Playwright fallback
+4. **Memory Management**: Stores conversation context and action history
+5. **Security**: Implements guardrails for sensitive operations
 
-### Custom .cursorrules
+## Troubleshooting
 
-We have custom .cursorrules for this project. It'll help quite a bit with writing Stagehand easily.
+### Microphone Permission Issues
+- Make sure your browser has microphone access
+- Try refreshing the page and allowing permissions again
 
-### Run on Browserbase
+### API Key Issues
+- Verify your API keys are correct
+- Check that you have sufficient credits/quota
+- Ensure the keys are properly set in `.env.local`
 
-To run on Browserbase, add your API keys to .env and change `env: "LOCAL"` to `env: "BROWSERBASE"` in [stagehand.config.ts](stagehand.config.ts).
+### Browserbase Issues
+- If you don't have Browserbase credentials, the app will run locally
+- For cloud execution, Browserbase credentials are required
 
-### Use Anthropic Claude 3.5 Sonnet
+## Contributing
 
-1. Add your API key to .env
-2. Change `modelName: "gpt-4o"` to `modelName: "claude-3-5-sonnet-latest"` in [stagehand.config.ts](stagehand.config.ts)
-3. Change `modelClientOptions: { apiKey: process.env.OPENAI_API_KEY }` to `modelClientOptions: { apiKey: process.env.ANTHROPIC_API_KEY }` in [stagehand.config.ts](stagehand.config.ts)
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Stagehand](https://github.com/browserbase/stagehand) for browser automation
+- [Deepgram](https://deepgram.com/) for speech-to-text
+- [Anthropic](https://www.anthropic.com/) for AI capabilities
+- [shadcn/ui](https://ui.shadcn.com/) for UI components

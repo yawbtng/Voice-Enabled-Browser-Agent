@@ -1,155 +1,258 @@
 "use client";
 
-import {
-  getConfig,
-  runStagehand,
-  startBBSSession,
-} from "@/app/api/stagehand/run";
-import DebuggerIframe from "@/components/stagehand/debuggerIframe";
-import { ConstructorParams } from "@browserbasehq/stagehand";
-import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import MicButton from "@/components/mic/MicButton";
+import StatusPanel from "@/components/status/StatusPanel";
+import ConfirmAction from "@/components/modals/ConfirmAction";
+import { type BrowserAction, type Intent } from "@/lib/schema";
 
 export default function Home() {
-  const [config, setConfig] = useState<ConstructorParams | null>(null);
-  const [running, setRunning] = useState(false);
-  const [debugUrl, setDebugUrl] = useState<string | undefined>(undefined);
-  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
-  const [error, setError] = useState<string | null>(null);
-  const [warning, setWarning] = useState<string | null>(null);
+  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const [actions, setActions] = useState<BrowserAction[]>([]);
+  const [currentTranscript, setCurrentTranscript] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [confirmationIntent, setConfirmationIntent] = useState<Intent | null>(null);
+  const [confirmationPrompt, setConfirmationPrompt] = useState("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
+  
+  const { toast } = useToast();
 
-  const fetchConfig = useCallback(async () => {
-    const config = await getConfig();
-    setConfig(config);
-    const warningToShow: string[] = [];
-    if (!config.hasLLMCredentials) {
-      warningToShow.push(
-        "No LLM credentials found. Edit stagehand.config.ts to configure your LLM client."
-      );
+  const handleTranscript = useCallback(async (transcript: string, isFinal: boolean) => {
+    setCurrentTranscript(transcript);
+    
+    if (isFinal && transcript.trim()) {
+      setIsProcessing(true);
+      
+      try {
+        // Parse intent
+        const intentResponse = await fetch('/api/intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transcript, sessionId }),
+        });
+        
+        const intentResult = await intentResponse.json();
+        
+        if (!intentResult.success) {
+          throw new Error(intentResult.error || 'Intent parsing failed');
+        }
+        
+        const intent = intentResult.data;
+        
+        // Execute action
+        const actionResponse = await fetch('/api/actions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ intent, sessionId }),
+        });
+        
+        const actionResult = await actionResponse.json();
+        
+        if (!actionResult.success) {
+          throw new Error(actionResult.error || 'Action execution failed');
+        }
+        
+        // Handle confirmation if required
+        if (actionResult.data.requiresConfirmation) {
+          setConfirmationIntent(intent);
+          setConfirmationPrompt(actionResult.data.confirmationPrompt);
+          setShowConfirmation(true);
+        } else {
+          // Add action to list
+          setActions(prev => [actionResult.data.action, ...prev]);
+          
+          toast({
+            title: "Action Completed",
+            description: actionResult.data.summary,
+          });
+        }
+        
+      } catch (error) {
+        console.error('Voice command processing error:', error);
+        toast({
+          title: "Processing Error",
+          description: error instanceof Error ? error.message : "Unknown error",
+          variant: "destructive",
+        });
+      } finally {
+        setIsProcessing(false);
+        setCurrentTranscript("");
+      }
     }
-    if (!config.hasBrowserbaseCredentials) {
-      warningToShow.push(
-        "No BROWSERBASE_API_KEY or BROWSERBASE_PROJECT_ID found. You will probably want this to run Stagehand in the cloud."
-      );
-    }
-    setWarning(warningToShow.join("\n"));
-  }, []);
+  }, [sessionId, toast]);
 
-  const startScript = useCallback(async () => {
-    if (!config) return;
-
-    setRunning(true);
-
+  const handleConfirmAction = useCallback(async () => {
+    if (!confirmationIntent) return;
+    
     try {
-      if (config.env === "BROWSERBASE") {
-        const { sessionId, debugUrl } = await startBBSSession();
-        setDebugUrl(debugUrl);
-        setSessionId(sessionId);
-        await runStagehand(sessionId);
+      const response = await fetch('/api/actions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          intent: confirmationIntent, 
+          sessionId, 
+          confirmed: true 
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setActions(prev => [result.data.action, ...prev]);
+        
+        toast({
+          title: "Action Confirmed & Executed",
+          description: result.data.summary,
+        });
       } else {
-        await runStagehand();
+        throw new Error(result.error || 'Action execution failed');
       }
     } catch (error) {
-      setError((error as Error).message);
-    } finally {
-      setRunning(false);
+      console.error('Confirmed action error:', error);
+      toast({
+        title: "Execution Error",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
     }
-  }, [config]);
+  }, [confirmationIntent, sessionId, toast]);
 
-  useEffect(() => {
-    fetchConfig();
-  }, [fetchConfig]);
+  const handleCancelAction = useCallback(() => {
+    toast({
+      title: "Action Cancelled",
+      description: "The action was not executed.",
+    });
+  }, [toast]);
 
-  if (config === null) {
-    return <div>Loading...</div>;
-  }
+  const handleScreenshotClick = useCallback((screenshot: string) => {
+    setCurrentScreenshot(screenshot);
+  }, []);
+
+  const handleError = useCallback((error: Error) => {
+    toast({
+      title: "Error",
+      description: error.message,
+      variant: "destructive",
+    });
+  }, [toast]);
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:block hidden"
-          src="/logo_dark.svg"
-          alt="Stagehand logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <Image
-          className="block dark:hidden"
-          src="/logo_light.svg"
-          alt="Stagehand logo"
-          width={180}
-          height={38}
-          priority
-        />
-        {running && <DebuggerIframe debugUrl={debugUrl} env={config.env} />}
-        <ul className="list-inside text-xl text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 font-semibold">
-              api/stagehand/main.ts
-            </code>
-            .
-          </li>
-        </ul>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          {!running && (
-            <a
-              href="#"
-              className=" border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 hover:bg-yellow-500"
-              onClick={startScript}
-            >
-              🤘 Run Stagehand
-            </a>
-          )}
-          {sessionId && (
-            <a
-              href={`https://www.browserbase.com/sessions/${sessionId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border border-solid transition-colors flex items-center justify-center bg-[#F9F6F4] text-black gap-2 hover:border-[#F7F7F7] hover:text-black text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 group "
-            >
-              <div className="relative w-4 h-4">
-                <Image
-                  src="/browserbase_grayscale.svg"
-                  alt="Browserbase"
-                  width={16}
-                  height={16}
-                  className="absolute opacity-0 group-hover:opacity-100 transition-opacity"
-                />
-                <Image
-                  src="/browserbase.svg"
-                  alt="Browserbase"
-                  width={16}
-                  height={16}
-                  className="absolute group-hover:opacity-0 transition-opacity"
-                />
-              </div>
-              View Session on Browserbase
-            </a>
-          )}
-          <a
-            className="border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://docs.stagehand.dev"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2">Voice Browser Agent</h1>
+          <p className="text-muted-foreground mb-4">
+            AI-powered voice-controlled browser automation
+          </p>
+          <div className="flex justify-center gap-2">
+            <Badge variant="secondary">Session: {sessionId.slice(-8)}</Badge>
+            <Badge variant="outline">{actions.length} actions</Badge>
+          </div>
         </div>
-        {error && (
-          <div className="bg-red-400 text-white rounded-md p-2 max-w-lg">
-            Error: {error}
-          </div>
-        )}
-        {warning && (
-          <div className="bg-yellow-400 text-black rounded-md p-2 max-w-lg">
-            <strong>Warning:</strong> {warning}
-          </div>
-        )}
-      </main>
+
+        {/* Main Content */}
+        <Tabs defaultValue="control" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="control">Voice Control</TabsTrigger>
+            <TabsTrigger value="status">Action Status</TabsTrigger>
+            <TabsTrigger value="screenshots">Screenshots</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="control" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Microphone Control */}
+              <MicButton
+                onTranscript={handleTranscript}
+                onError={handleError}
+                disabled={isProcessing}
+              />
+              
+              {/* Current Status */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Current Status</h3>
+                <div className="space-y-3">
+                  {currentTranscript && (
+                    <div className="p-3 rounded-lg bg-muted">
+                      <p className="text-sm font-medium mb-1">Current Transcript:</p>
+                      <p className="text-sm text-muted-foreground">"{currentTranscript}"</p>
+                    </div>
+                  )}
+                  
+                  {isProcessing && (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Processing voice command...
+                      </p>
+                    </div>
+                  )}
+                  
+                  {!currentTranscript && !isProcessing && (
+                    <div className="text-center text-muted-foreground py-8">
+                      <p>Ready to receive voice commands</p>
+                      <p className="text-sm mt-1">Click the microphone button to start</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="status">
+            <StatusPanel
+              actions={actions}
+              onScreenshotClick={handleScreenshotClick}
+            />
+          </TabsContent>
+
+          <TabsContent value="screenshots">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Screenshots</h3>
+              {actions.filter(action => action.screenshot).length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <p>No screenshots available yet</p>
+                  <p className="text-sm mt-1">Screenshots will appear here after actions are executed</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {actions
+                    .filter(action => action.screenshot)
+                    .map(action => (
+                      <div key={action.id} className="space-y-2">
+                        <img
+                          src={action.screenshot}
+                          alt={`Screenshot for ${action.intent.action}`}
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {action.intent.action} - {new Date(action.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Confirmation Modal */}
+        <ConfirmAction
+          open={showConfirmation}
+          onOpenChange={setShowConfirmation}
+          intent={confirmationIntent}
+          confirmationPrompt={confirmationPrompt}
+          onConfirm={handleConfirmAction}
+          onCancel={handleCancelAction}
+        />
+      </div>
     </div>
   );
 }
