@@ -1,13 +1,13 @@
-import { Mem0 } from "mem0ai";
+import { MemoryClient } from "mem0ai";
 import { env } from "./env";
 import { SessionContextSchema, type SessionContext } from "./schema";
 
 export class Mem0Client {
-  private client: Mem0 | null = null;
+  private client: MemoryClient | null = null;
 
   constructor() {
     if (env.MEM0_API_KEY) {
-      this.client = new Mem0({
+      this.client = new MemoryClient({
         apiKey: env.MEM0_API_KEY,
       });
     }
@@ -24,10 +24,14 @@ export class Mem0Client {
     }
 
     try {
-      const memory = await this.client.addMemory({
-        content,
+      const memory = await this.client.add([
+        {
+          role: "user",
+          content: content,
+        },
+      ], {
+        user_id: sessionId,
         metadata: {
-          sessionId,
           timestamp: Date.now(),
           ...metadata,
         },
@@ -51,12 +55,9 @@ export class Mem0Client {
     }
 
     try {
-      const memories = await this.client.searchMemories({
-        query,
+      const memories = await this.client.search(query, {
         limit,
-        metadata: {
-          sessionId,
-        },
+        user_id: sessionId,
       });
 
       return memories;
@@ -73,11 +74,9 @@ export class Mem0Client {
     }
 
     try {
-      const memories = await this.client.getMemories({
+      const memories = await this.client.getAll({
         limit,
-        metadata: {
-          sessionId,
-        },
+        user_id: sessionId,
       });
 
       return memories;
@@ -94,9 +93,8 @@ export class Mem0Client {
     }
 
     try {
-      const memory = await this.client.updateMemory({
-        id: memoryId,
-        content,
+      const memory = await this.client.update(memoryId, {
+        text: content,
       });
 
       return memory;
@@ -113,7 +111,7 @@ export class Mem0Client {
     }
 
     try {
-      await this.client.deleteMemory(memoryId);
+      await this.client.delete(memoryId);
       return true;
     } catch (error) {
       console.error("Failed to delete memory:", error);
@@ -127,11 +125,14 @@ export class Mem0Client {
     // Build conversation history from memories
     const conversationHistory = memories
       .filter(memory => memory.metadata?.type === "conversation")
-      .map(memory => ({
-        role: memory.metadata?.role || "user",
-        content: memory.content,
-        timestamp: memory.metadata?.timestamp || Date.now(),
-      }))
+      .map(memory => {
+        const content = memory.messages?.[0]?.content;
+        return {
+          role: memory.metadata?.role || "user",
+          content: typeof content === "string" ? content : "",
+          timestamp: memory.metadata?.timestamp || Date.now(),
+        };
+      })
       .sort((a, b) => a.timestamp - b.timestamp);
 
     const context: SessionContext = {

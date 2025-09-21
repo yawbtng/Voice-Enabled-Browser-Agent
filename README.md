@@ -188,3 +188,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Deepgram](https://deepgram.com/) for speech-to-text
 - [Anthropic](https://www.anthropic.com/) for AI capabilities
 - [shadcn/ui](https://ui.shadcn.com/) for UI components
+
+
