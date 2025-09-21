@@ -11,7 +11,7 @@
 "use server";
 
 import StagehandConfig from "@/stagehand.config";
-import Browserbase from "@browserbasehq/sdk";
+import { Browserbase } from "@browserbasehq/sdk";
 import { Stagehand } from "@browserbasehq/stagehand";
 import { main } from "./main";
 
@@ -42,7 +42,7 @@ export async function getConfig() {
     process.env.BROWSERBASE_API_KEY !== undefined &&
     process.env.BROWSERBASE_PROJECT_ID !== undefined;
 
-  const hasLLMCredentials = process.env.OPENAI_API_KEY !== undefined;
+  const hasLLMCredentials = process.env.ANTHROPIC_API_KEY !== undefined;
 
   return {
     env: StagehandConfig.env,

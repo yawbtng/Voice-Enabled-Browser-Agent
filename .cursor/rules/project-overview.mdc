@@ -1,23 +1,146 @@
 ---
-description:
-globs:
+description: Voice-enabled browser automation agent with speech-to-text, intent parsing, and browser automation capabilities
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.md"]
 alwaysApply: true
 ---
 
-For this project, you are tasked with building a voice-enabled browser automation agent that listens to natural speech, converts it into structured commands, and executes them inside a real browser session. Your system should leverage speech-to-text for transcription, an intent parser to transform spoken language into structured JSON instructions, and Browserbase for reliable headless browser automation.
+# Voice Browser Agent - Project Overview
 
-Your assistant should support multi-step workflows such as searching, filtering, navigating, filling forms, extracting data, and summarizing results, while maintaining context across turns. Responses should be returned via text-to-speech and accompanied by screenshots or extracted results for transparency.
+## Core Mission
+Build a voice-enabled browser automation agent that converts natural speech into structured browser commands and executes them in real browser sessions. The system provides conversational AI-powered web automation with context awareness, multi-step workflows, and comprehensive feedback mechanisms.
 
-Project Requirements:
+## Technical Architecture
 
-Implement an end-to-end pipeline that captures audio input, performs speech-to-text transcription, parses commands into structured intents, and maps them to browser automation actions
-Integrate Browserbase with Playwright/Puppeteer to handle navigation, selectors, dynamic rendering, and session persistence
-Support context awareness so the system can handle follow-up commands (“Sort by price,” “open the second result”) and confirm risky actions (“Proceed to checkout?”)
-Provide a feedback layer with text-to-speech summaries and a status panel or CLI that logs the transcript, parsed command JSON, live execution steps, and captured screenshots
-Export results as structured JSON or CSV (e.g., extracted product tables) and archive session artifacts for later inspection
+### Core Components
+1. **Speech-to-Text Pipeline**: Deepgram integration for real-time audio transcription
+2. **Intent Parser**: Claude AI-powered natural language understanding to convert speech to structured JSON commands
+3. **Browser Automation Engine**: Browserbase + Playwright/Stagehand for reliable headless browser control
+4. **Context Management**: Mem0 for maintaining conversation state and session memory
+5. **Feedback System**: Real-time status updates, screenshots, and text-to-speech responses
+
+### Technology Stack
+- **Frontend**: Next.js 14 with App Router, Tailwind CSS, Shadcn/ui components
+- **Backend**: Next.js API routes with Vercel AI SDK
+- **Speech Processing**: Deepgram API for transcription
+- **AI Integration**: Claude via Vercel AI SDK for intent parsing
+- **Browser Automation**: Browserbase + Playwright + Stagehand
+- **Memory Management**: Mem0 for context persistence
+- **Deployment**: Vercel platform
+
+## Detailed Requirements
+
+### 1. Speech-to-Text Pipeline
+- **Real-time Audio Capture**: Web Audio API for microphone input
+- **Deepgram Integration**: Streaming transcription with <200ms latency
+- **Noise Handling**: Background noise filtering and voice activity detection
+- **Multi-language Support**: English primary, extensible to other languages
+- **Confidence Scoring**: Low-confidence detection with clarification prompts
+
+### 2. Intent Parsing System
+- **Command Categories**:
+  - Navigation: "Go to Amazon", "Open the second result", "Go back"
+  - Search: "Search for iPhone 15", "Find laptops under $1000"
+  - Interaction: "Click the buy button", "Fill in my email", "Scroll down"
+  - Data Extraction: "Get all product prices", "Extract the contact information"
+  - Workflow: "Add this to cart and checkout", "Compare these three products"
+
+- **Structured Output Format**:
+```json
+{
+  "intent": "search",
+  "action": "navigate_and_search",
+  "parameters": {
+    "query": "iPhone 15",
+    "site": "amazon.com",
+    "filters": ["price_range: 500-1000"]
+  },
+  "confidence": 0.95,
+  "context": "previous_search_results"
+}
+```
+
+### 3. Browser Automation Engine
+- **Session Management**: Persistent browser sessions with state preservation
+- **Dynamic Selectors**: Semantic element identification with ML fallback
+- **Multi-step Workflows**: Complex automation sequences with error recovery
+- **Screenshot Capture**: Visual feedback for every action
+- **Performance Optimization**: Parallel execution where possible
+
+### 4. Context Awareness
+- **Conversation Memory**: Track previous commands and results
+- **Reference Resolution**: Handle pronouns and references ("it", "that one", "the second result")
+- **Session Continuity**: Maintain state across browser sessions
+- **User Preferences**: Remember user settings and common actions
+
+### 5. Feedback & Monitoring
+- **Real-time Status Panel**: Live execution progress with step-by-step logging
+- **Visual Feedback**: Screenshots and page snapshots for transparency
+- **Audio Feedback**: Text-to-speech confirmations and summaries
+- **Error Reporting**: Detailed error logs with suggested recovery actions
+- **Performance Metrics**: Response times, success rates, and user satisfaction
+
+## Use Cases & Examples
+
+### E-commerce Automation
+- "Search for wireless headphones on Amazon"
+- "Sort by price and show me the top 5 results"
+- "Add the second one to cart and proceed to checkout"
+- "Extract all product details and prices from this page"
+
+### Research & Data Collection
+- "Find contact information for tech companies in San Francisco"
+- "Get the latest news about AI developments"
+- "Compare prices for this product across different websites"
+- "Extract all job postings from this careers page"
+
+### Form Automation
+- "Fill out this contact form with my information"
+- "Apply for this job using my resume data"
+- "Book an appointment for next Tuesday at 2 PM"
+- "Subscribe to newsletters from these websites"
+
+## Technical Challenges & Solutions
+
+### 1. Robust Speech Recognition
+- **Challenge**: Noisy environments, accents, background noise
+- **Solution**: Deepgram's advanced noise reduction, confidence scoring, and clarification loops
+- **Implementation**: Real-time audio processing with adaptive thresholds
+
+### 2. Intent Ambiguity
+- **Challenge**: Unclear commands, multiple interpretations
+- **Solution**: Context-aware parsing with clarification prompts
+- **Implementation**: Claude AI with conversation history and user preferences
+
+### 3. Dynamic DOM Handling
+- **Challenge**: Changing website structures, dynamic content
+- **Solution**: Semantic selectors with ML-assisted fallback
+- **Implementation**: Stagehand's intelligent element identification
+
+### 4. Error Recovery
+- **Challenge**: Failed actions, network issues, unexpected page changes
+- **Solution**: Multi-level retry mechanisms with user confirmation
+- **Implementation**: Exponential backoff, alternative strategies, rollback capabilities
+
+### 5. Security & Safety
+- **Challenge**: Sensitive operations, data protection, user safety
+- **Solution**: Explicit confirmation for risky actions
+- **Implementation**: Guardrails for login, checkout, payment, and data entry
+
+## Success Metrics
+- **Accuracy**: >95% intent parsing accuracy for common commands
+- **Performance**: <2 second response time from speech to action
+- **Reliability**: >99% uptime for browser automation
+- **User Experience**: <3 clarification requests per session
+- **Data Quality**: >90% successful data extraction accuracy
+
 Challenges:
+-Achieve robust transcription and intent parsing in noisy environments, implement confirmation loops when confidence is low
+-Handle fragile or changing DOM structures by using semantic selectors first and ML-assisted fallback when needed
+-Manage error recovery: retry failed actions, backtrack a step, or ask clarifying questions
+-Implement guardrails for sensitive operations (login, checkout, data entry), requiring explicit user confirmation before execution
 
-Achieve robust transcription and intent parsing in noisy environments, implement confirmation loops when confidence is low
-Handle fragile or changing DOM structures by using semantic selectors first and ML-assisted fallback when needed
-Manage error recovery: retry failed actions, backtrack a step, or ask clarifying questions
-Implement guardrails for sensitive operations (login, checkout, data entry), requiring explicit user confirmation before execution
+## Development Phases
+1. **Foundation**: Core pipeline setup, basic speech-to-text, simple browser automation
+2. **Core Features**: Intent parsing, context awareness, multi-step workflows
+3. **Advanced Features**: Error recovery, data export, comprehensive feedback
+4. **Polish**: Performance optimization, security hardening, user experience refinement

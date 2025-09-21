@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const StagehandConfig: ConstructorParams = {
-  env: "BROWSERBASE",
+  env: "LOCAL",
   apiKey: process.env.BROWSERBASE_API_KEY /* API key for authentication */,
   projectId: process.env.BROWSERBASE_PROJECT_ID /* Project identifier */,
   debugDom: true /* Enable DOM debugging features */,
@@ -18,9 +18,9 @@ const StagehandConfig: ConstructorParams = {
   enableCaching: false /* Enable caching functionality */,
   browserbaseSessionID:
     undefined /* Session ID for resuming Browserbase sessions */,
-  modelName: "gpt-4o" /* Name of the model to use */,
+  modelName: "claude-3-7-sonnet-latest" /* Name of the model to use */,
   modelClientOptions: {
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.ANTHROPIC_API_KEY,
   } /* Configuration options for the model client */,
 };
 export default StagehandConfig;

@@ -9,8 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@browserbasehq/sdk": "^2.0.0",
-    "@browserbasehq/stagehand": "^1.10.1",
+    "@anthropic-ai/sdk": "^0.63.0",
+    "@browserbasehq/sdk": "^2.6.0",
+    "@browserbasehq/stagehand": "^1.14.0",
     "@deepgram/sdk": "^4.11.2",
     "@mozilla/readability": "^0.6.0",
     "ai": "^5.0.44",
