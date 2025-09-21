@@ -1,9 +1,7 @@
 ---
 description: Voice-enabled browser automation agent with speech-to-text, intent parsing, and browser automation capabilities
-globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.md"]
-alwaysApply: true
+alwaysApply: false
 ---
-
 # Voice Browser Agent - Project Overview
 
 ## Core Mission
