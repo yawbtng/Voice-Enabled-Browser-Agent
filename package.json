@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.17",
     "@anthropic-ai/sdk": "^0.63.0",
     "@browserbasehq/sdk": "^2.6.0",
     "@browserbasehq/stagehand": "^1.14.0",
