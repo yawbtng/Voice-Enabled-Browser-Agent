@@ -327,6 +327,88 @@ export class Mem0Client {
       throw error;
     }
   }
+
+  /**
+   * Add extraction memory
+   */
+  async addExtractionMemory(
+    sessionId: string,
+    instruction: string,
+    data: any,
+    success: boolean
+  ) {
+    const content = `Extraction: ${instruction} - ${success ? "Success" : "Failed"}`;
+    const metadata = {
+      type: "extraction",
+      instruction,
+      success,
+      timestamp: Date.now(),
+      dataSize: JSON.stringify(data).length,
+    };
+
+    return this.addMemory(sessionId, content, metadata);
+  }
+
+  /**
+   * Get extraction history for a session
+   */
+  async getExtractionHistory(sessionId: string, limit: number = 20) {
+    if (!this.client) {
+      console.warn("Mem0 client not initialized. Returning empty results.");
+      return [];
+    }
+
+    try {
+      const memories = await this.client.search("extraction", {
+        limit,
+        user_id: sessionId,
+        metadata: {
+          type: "extraction",
+        },
+      });
+
+      return memories.map(memory => ({
+        id: memory.id,
+        instruction: memory.metadata?.instruction,
+        success: memory.metadata?.success,
+        timestamp: memory.metadata?.timestamp,
+        data: memory.metadata?.data,
+      }));
+    } catch (error) {
+      console.error("Failed to get extraction history:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get successful extraction patterns
+   */
+  async getSuccessfulExtractionPatterns(sessionId: string) {
+    if (!this.client) {
+      console.warn("Mem0 client not initialized. Returning empty results.");
+      return [];
+    }
+
+    try {
+      const successfulExtractions = await this.client.search("extraction success", {
+        limit: 50,
+        user_id: sessionId,
+        metadata: {
+          type: "extraction",
+          success: true,
+        },
+      });
+
+      return successfulExtractions.map(memory => ({
+        instruction: memory.metadata?.instruction,
+        dataSize: memory.metadata?.dataSize,
+        timestamp: memory.metadata?.timestamp,
+      }));
+    } catch (error) {
+      console.error("Failed to get successful extraction patterns:", error);
+      throw error;
+    }
+  }
 }
 
 export const mem0Client = new Mem0Client();
