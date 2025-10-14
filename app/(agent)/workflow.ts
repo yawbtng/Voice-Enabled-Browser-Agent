@@ -18,6 +18,7 @@ export class WorkflowEngine {
   private sessionId: string;
   private workflowState: WorkflowState | null = null;
   private executor: BrowserExecutor | null = null;
+  private workflowSteps: WorkflowStep[] = [];
 
   constructor(sessionId: string) {
     this.stagehand = new Stagehand(StagehandConfig);
@@ -36,6 +37,9 @@ export class WorkflowEngine {
   async executeWorkflow(workflow: Workflow): Promise<WorkflowState> {
     // Validate workflow
     const validatedWorkflow = WorkflowSchema.parse(workflow);
+    
+    // Store workflow steps for reference
+    this.workflowSteps = validatedWorkflow.steps;
     
     // Initialize workflow state
     this.workflowState = {
@@ -215,10 +219,11 @@ export class WorkflowEngine {
     this.workflowState.failedSteps = [];
     
     // Clear retry counts for steps after checkpoint
-    Object.keys(this.workflowState.retryCounts).forEach(stepId => {
+    const retryCounts = this.workflowState.retryCounts;
+    Object.keys(retryCounts).forEach(stepId => {
       const stepIdx = this.getStepIndex(stepId);
       if (stepIdx > stepIndex) {
-        delete this.workflowState.retryCounts[stepId];
+        delete retryCounts[stepId];
       }
     });
 
@@ -255,18 +260,14 @@ export class WorkflowEngine {
    * Get step by ID
    */
   private getStepById(stepId: string): WorkflowStep | null {
-    // This would need access to the original workflow steps
-    // For now, return null - this should be improved
-    return null;
+    return this.workflowSteps.find(step => step.id === stepId) || null;
   }
 
   /**
    * Get step index by ID
    */
   private getStepIndex(stepId: string): number {
-    // This would need access to the original workflow steps
-    // For now, return 0 - this should be improved
-    return 0;
+    return this.workflowSteps.findIndex(step => step.id === stepId);
   }
 
   /**
