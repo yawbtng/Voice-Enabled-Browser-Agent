@@ -91,6 +91,7 @@ Voice_Browser_Agent/
 - **app/api/**: Next.js API routes.
   - **app/api/actions/route.ts**: Browser action execution endpoint.
   - **app/api/extract/route.ts**: Data extraction API using Stagehand extract.
+  - **app/api/export/route.ts**: JSON export API for saving extracted data to downloads directory.
   - **app/api/intent/route.ts**: Intent parsing endpoint (Claude via Vercel AI SDK).
   - **app/api/observe/route.ts**: Observation API with CRUD operations.
   - **app/api/stt/route.ts**: Deepgram streaming proxy endpoint.
@@ -139,6 +140,7 @@ Voice_Browser_Agent/
 - **lib/schema-generator.ts**: AI-powered schema generation from natural language.
 - **lib/schema.ts**: Core Zod schemas for intents, params, and workflows.
 - **lib/utils.ts**: General utility functions and helpers.
+- **lib/export-utils.ts**: Export utilities for JSON formatting, filename generation, and data validation.
 
 ### Server/AI Integration
 - **Vercel AI SDK** used in API routes (LLM providers, streaming).
