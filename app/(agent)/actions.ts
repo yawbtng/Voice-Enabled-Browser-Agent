@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
       data: {
         action: result,
         summary,
+        debugUrl: executor.getDebugUrl(),
       },
       timestamp: Date.now(),
     });
@@ -114,6 +115,7 @@ export async function PUT(request: NextRequest) {
       data: {
         action: result,
         summary,
+        debugUrl: executor.getDebugUrl(),
       },
       timestamp: Date.now(),
     });

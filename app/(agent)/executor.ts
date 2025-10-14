@@ -1,4 +1,5 @@
 import { Stagehand } from "@browserbasehq/stagehand";
+import { Browserbase } from "@browserbasehq/sdk";
 import StagehandConfig from "@/stagehand.config";
 import { BrowserActionSchema, type BrowserAction, type Intent } from "@/lib/schema";
 import { mem0Client } from "@/lib/mem0";
@@ -7,6 +8,7 @@ import { aiClient } from "@/lib/ai";
 export class BrowserExecutor {
   private stagehand: Stagehand;
   private sessionId: string;
+  private debugUrl: string | null = null;
 
   constructor(sessionId: string) {
     this.stagehand = new Stagehand(StagehandConfig);
@@ -15,6 +17,17 @@ export class BrowserExecutor {
 
   async init() {
     await this.stagehand.init();
+    
+    // Capture debug URL from Browserbase session
+    try {
+      if (StagehandConfig.env === "BROWSERBASE") {
+        const browserbase = new Browserbase(StagehandConfig);
+        const debugUrl = await browserbase.sessions.debug(this.sessionId);
+        this.debugUrl = debugUrl.debuggerFullscreenUrl;
+      }
+    } catch (error) {
+      console.warn('Failed to get debug URL:', error);
+    }
     
     // Navigate to a default page to ensure Stagehand scripts are injected
     const page = this.stagehand.page;
@@ -300,6 +313,10 @@ export class BrowserExecutor {
     } catch (error) {
       console.warn('Failed to ensure Stagehand scripts:', error);
     }
+  }
+
+  getDebugUrl(): string | null {
+    return this.debugUrl;
   }
 
   async close() {

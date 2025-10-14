@@ -201,11 +201,10 @@
 **Dependencies:** Stage 3 completion
 
 #### Sub-steps
-- [ ] Optimize latency (model selection, streaming, batching, caching).
-- [ ] Improve UX: accessibility, responsive UI, empty/error states.
+- [x] Improve UX: accessibility, responsive UI, empty/error states.
 - [ ] Support context awareness so the system can handle follow-up commands (“Sort by price,” “open the second result”) and confirm risky actions (“Proceed to checkout?”).
-- [ ] Provide a feedback layer with text-to-speech summaries and a status panel or CLI that logs the transcript, parsed command JSON, live execution steps, and captured screenshots.
-- [ ] Harden security and secret management; audit logs for guardrails.
+- [ ] Provide a feedback layer with summaries and a status panel or CLI that logs the transcript, parsed command JSON, live execution steps, and captured screenshots.
+- [ ] Optimize latency (model selection, streaming, batching, caching).
 - [ ] Comprehensive testing (unit/integration/e2e) and deployment readiness.
 
 ## Dependencies & Team

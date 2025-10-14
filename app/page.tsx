@@ -11,6 +11,8 @@ import StatusPanel from "@/components/status/StatusPanel";
 import ConfirmAction from "@/components/modals/ConfirmAction";
 import { ObservationMap } from "@/components/observation/ObservationMap";
 import { ElementInspector } from "@/components/observation/ElementInspector";
+import BrowserPreview from "@/components/stagehand/BrowserPreview";
+import ScreenshotGallery from "@/components/status/ScreenshotGallery";
 import { type BrowserAction, type Intent } from "@/lib/schema";
 import { type Element } from "@/lib/observation-schemas";
 
@@ -24,6 +26,7 @@ export default function Home() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
+  const [debugUrl, setDebugUrl] = useState<string | null>(null);
   
   const micButtonRef = useRef<MicButtonRef>(null);
   const { toast } = useToast();
@@ -96,6 +99,11 @@ export default function Home() {
           // Add action to list
           setActions(prev => [actionResult.data.action, ...prev]);
           
+          // Update debug URL if available
+          if (actionResult.data.debugUrl) {
+            setDebugUrl(actionResult.data.debugUrl);
+          }
+          
           toast({
             title: "Action Completed",
             description: actionResult.data.summary,
@@ -134,6 +142,11 @@ export default function Home() {
       
       if (result.success) {
         setActions(prev => [result.data.action, ...prev]);
+        
+        // Update debug URL if available
+        if (result.data.debugUrl) {
+          setDebugUrl(result.data.debugUrl);
+        }
         
         toast({
           title: "Action Confirmed & Executed",
@@ -192,14 +205,13 @@ export default function Home() {
 
         {/* Main Content */}
         <Tabs defaultValue="control" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="control">Voice Control</TabsTrigger>
-            <TabsTrigger value="status">Action Status</TabsTrigger>
-            <TabsTrigger value="observe">Page Observer</TabsTrigger>
-            <TabsTrigger value="screenshots">Screenshots</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="control">Control Center</TabsTrigger>
+            <TabsTrigger value="analysis">Page Analysis</TabsTrigger>
           </TabsList>
 
           <TabsContent value="control" className="space-y-6">
+            {/* Voice Control Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Microphone Control */}
               <MicButton
@@ -238,16 +250,23 @@ export default function Home() {
                 </div>
               </Card>
             </div>
-          </TabsContent>
 
-          <TabsContent value="status">
+            {/* Browser Preview Section */}
+            <BrowserPreview 
+              debugUrl={debugUrl}
+              env="BROWSERBASE"
+              className="w-full"
+            />
+
+            {/* Action Status Section */}
             <StatusPanel
               actions={actions}
               onScreenshotClick={handleScreenshotClick}
             />
           </TabsContent>
 
-          <TabsContent value="observe" className="space-y-6">
+          <TabsContent value="analysis" className="space-y-6">
+            {/* Page Observer Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Observation Map */}
               <ObservationMap
@@ -270,36 +289,9 @@ export default function Home() {
                 </Card>
               )}
             </div>
-          </TabsContent>
 
-          <TabsContent value="screenshots">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Screenshots</h3>
-              {actions.filter(action => action.screenshot).length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  <p>No screenshots available yet</p>
-                  <p className="text-sm mt-1">Screenshots will appear here after actions are executed</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {actions
-                    .filter(action => action.screenshot)
-                    .map(action => (
-                      <div key={action.id} className="space-y-2">
-                        <img
-                          src={action.screenshot}
-                          alt={`Screenshot for ${action.intent.action}`}
-                          className="w-full h-32 object-cover rounded-lg border"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          {action.intent.action} - {new Date(action.timestamp).toLocaleTimeString()}
-                        </p>
-                      </div>
-                    ))
-                  }
-                </div>
-              )}
-            </Card>
+            {/* Screenshots Gallery Section */}
+            <ScreenshotGallery actions={actions} />
           </TabsContent>
         </Tabs>
 

@@ -13,10 +13,15 @@
 
 - Status Panel: Real-time list of actions with timestamps and statuses (running/success/fail)
 - Item interaction: Click to preview associated screenshot
-- Layout: Sticky on desktop; collapsible drawer on mobile
+- Layout: Always expanded in Control Center tab
 
-- Screenshot Feed: Vertical feed or carousel of screenshots with captions
-- Behavior: Lazy-load images; zoom on click; copy link
+- Browser Preview: Live Browserbase iframe showing headless browser activity
+- Behavior: Full-width display below voice controls, responsive sizing
+- Controls: Refresh, fullscreen toggle, loading states
+
+- Screenshot Gallery: Grid-based gallery with lightbox preview
+- Behavior: Lazy-load images; zoom on click; download functionality
+- Layout: Responsive grid (1 col mobile, 2-3 cols desktop)
 
 - Confirmation Modal: Guardrails for sensitive actions (login/checkout/payment/data entry)
 - Content: Summarize action, site, parameters; require explicit confirm/cancel
@@ -25,12 +30,20 @@
 - UX: Provide one-tap clarification options
 
 ## User Flows
-1) Record → Transcribe (stream) → Parse Intent → Confirm (if sensitive/low-confidence) → Execute → Show results (status + screenshots) → Optional TTS summary
+1) Record → Transcribe (stream) → Parse Intent → Confirm (if sensitive/low-confidence) → Execute → Show results (status + browser preview) → Optional TTS summary
 2) Data Extraction → Show structured JSON preview → Export (copy/JSON/CSV)
+3) Page Analysis → Observe elements → Inspect details → View screenshots gallery
+
+## Layout Structure
+- **2-Tab Interface**: Control Center and Page Analysis
+- **Control Center Tab**: Voice Control → Browser Preview → Action Status (stacked vertically)
+- **Page Analysis Tab**: Page Observer → Screenshots Gallery (stacked vertically)
+- **Browser Preview**: Full-width iframe showing live Browserbase session
 
 ## Responsiveness
-- Mobile-first: mic button anchored bottom-center; status panel as bottom sheet; screenshots as swipeable cards
-- Desktop: split layout with left control column and right content/screenshot pane
+- Mobile-first: mic button anchored bottom-center; browser preview maintains aspect ratio; status panel always expanded
+- Desktop: stacked layout with full-width browser preview; responsive grid for screenshots
+- Browser Preview: 16:9 aspect ratio maintained across all breakpoints
 
 ## Accessibility
 - All interactive elements keyboard-focusable with visible focus rings
@@ -48,7 +61,8 @@
 components/
 ├── mic/MicButton.tsx
 ├── status/StatusPanel.tsx
-├── status/ScreenshotFeed.tsx
+├── status/ScreenshotGallery.tsx
+├── stagehand/BrowserPreview.tsx
 └── modals/ConfirmAction.tsx
 ```
 

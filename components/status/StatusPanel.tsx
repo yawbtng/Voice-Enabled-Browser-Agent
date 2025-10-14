@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,9 +9,7 @@ import {
   XCircle, 
   Clock, 
   Loader2, 
-  Eye,
-  ChevronDown,
-  ChevronUp
+  Eye
 } from "lucide-react";
 import { type BrowserAction } from "@/lib/schema";
 
@@ -23,7 +20,6 @@ interface StatusPanelProps {
 }
 
 export default function StatusPanel({ actions, onScreenshotClick, className }: StatusPanelProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const getStatusIcon = (status: BrowserAction["status"]) => {
     switch (status) {
@@ -83,24 +79,16 @@ export default function StatusPanel({ actions, onScreenshotClick, className }: S
   };
 
   return (
-    <Card className={`${className} ${isCollapsed ? 'h-auto' : 'h-96'}`}>
+    <Card className={`${className} h-96`}>
       <div className="flex items-center justify-between p-4 border-b">
         <h3 className="text-lg font-semibold">Action Status</h3>
         <div className="flex items-center gap-2">
           <Badge variant="secondary">{actions.length} actions</Badge>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-          >
-            {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-          </Button>
         </div>
       </div>
       
-      {!isCollapsed && (
-        <ScrollArea className="h-80">
-          <div className="p-4 space-y-3">
+      <ScrollArea className="h-80">
+        <div className="p-4 space-y-3">
             {actions.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
                 <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -168,7 +156,6 @@ export default function StatusPanel({ actions, onScreenshotClick, className }: S
             )}
           </div>
         </ScrollArea>
-      )}
     </Card>
   );
 }
