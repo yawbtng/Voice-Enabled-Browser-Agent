@@ -4,6 +4,7 @@ import { z } from "zod";
 import { env } from "./env";
 import { IntentSchema, type Intent, WorkflowSchema, type Workflow, type WorkflowStep } from "./schema";
 import { SessionContextSchema, type SessionContext } from "./schema";
+import { WorkflowLogEntry, WorkflowSummary, createSummary, WorkflowSummaryStatus } from "./workflow-log";
 import { getDefaultRetryPolicy } from "./retry";
 
 export class AIClient {
@@ -276,6 +277,112 @@ ${contextPrompt}`;
     } catch (error) {
       console.error("Failed to generate text:", error);
       throw error;
+    }
+  }
+
+  async generateWorkflowSummary(
+    logs: WorkflowLogEntry[],
+    executionResult: any,
+    transcript?: string
+  ): Promise<WorkflowSummary> {
+    if (!this.client) {
+      throw new Error("AI client not initialized");
+    }
+
+    try {
+      const logSummary = logs.map(log => 
+        `[${log.type}] ${log.level}: ${log.message}${log.metadata ? ` (${JSON.stringify(log.metadata)})` : ''}`
+      ).join('\n');
+
+      const systemPrompt = `You are an AI assistant that analyzes voice command execution workflows and provides clear, actionable summaries.
+
+Your task is to analyze the workflow logs and provide:
+1. Overall status (success/partial/failed)
+2. Clear explanation of what happened
+3. Key points about the execution
+4. Error analysis if applicable
+5. Actionable recommendations
+
+Be concise but informative. Use plain language that non-technical users can understand.`;
+
+      const userPrompt: string = `Analyze this voice command execution workflow:
+
+Voice Command: "${transcript || 'Unknown'}"
+
+Workflow Logs:
+${logSummary}
+
+Final Result: ${JSON.stringify(executionResult, null, 2)}
+
+Please provide:
+1. Status: success/partial/failed
+2. Title: Brief summary title
+3. Summary: 1-2 sentence explanation of what happened
+4. Key Points: 3-5 bullet points of what occurred
+5. Error Analysis: If failed/partial, explain why in plain language
+6. Recommendations: 2-3 actionable suggestions for improvement
+
+Format as JSON with these fields:
+{
+  "status": "success|partial|failed",
+  "title": "Brief title",
+  "summary": "1-2 sentence explanation",
+  "keyPoints": ["point1", "point2", "point3"],
+  "errorAnalysis": "explanation if applicable",
+  "recommendations": ["rec1", "rec2", "rec3"]
+}`;
+
+      const aiResult = await generateText({
+        model: this.client,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        maxOutputTokens: 1000,
+      });
+
+      // Parse the JSON response
+      const summaryData = JSON.parse(aiResult.text);
+      
+      // Calculate metrics
+      const totalSteps = logs.filter(log => ['stt', 'intent', 'action', 'execution'].includes(log.type)).length;
+      const successfulSteps = logs.filter(log => log.level === 'success').length;
+      const startTime = Math.min(...logs.map(log => log.timestamp));
+      const endTime = Math.max(...logs.map(log => log.timestamp));
+      const duration = endTime - startTime;
+
+      return createSummary(
+        summaryData.status as WorkflowSummaryStatus,
+        summaryData.title,
+        summaryData.summary,
+        summaryData.keyPoints,
+        summaryData.recommendations,
+        {
+          duration,
+          stepsCompleted: successfulSteps,
+          totalSteps,
+          successRate: totalSteps > 0 ? successfulSteps / totalSteps : 0,
+        },
+        summaryData.errorAnalysis
+      );
+    } catch (error) {
+      console.error("Failed to generate workflow summary:", error);
+      
+      // Fallback summary
+      return createSummary(
+        'failed',
+        'Summary Generation Failed',
+        'Unable to generate AI summary due to an error.',
+        ['Workflow logs are available for manual review'],
+        ['Check the logs for detailed information', 'Try the command again'],
+        {
+          duration: 0,
+          stepsCompleted: 0,
+          totalSteps: logs.length,
+          successRate: 0,
+        },
+        'AI summary generation encountered an error.'
+      );
     }
   }
 }
