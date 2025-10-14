@@ -133,7 +133,6 @@
 - [x] Implement multi-step workflow orchestration with error recovery and retries.
 - [x] Add Stagehand `extract`-based data extraction with Zod schemas.
 - [x] Implement `observe` for semantic mapping and debugging.
-- [ ] Add optional TTS responses and summaries.
 - [x] Add export options (JSON/CSV) for extracted data.
 
 #### Implementation Details - Multi-Step Workflows
@@ -204,6 +203,8 @@
 #### Sub-steps
 - [ ] Optimize latency (model selection, streaming, batching, caching).
 - [ ] Improve UX: accessibility, responsive UI, empty/error states.
+- [ ] Support context awareness so the system can handle follow-up commands (“Sort by price,” “open the second result”) and confirm risky actions (“Proceed to checkout?”).
+- [ ] Provide a feedback layer with text-to-speech summaries and a status panel or CLI that logs the transcript, parsed command JSON, live execution steps, and captured screenshots.
 - [ ] Harden security and secret management; audit logs for guardrails.
 - [ ] Comprehensive testing (unit/integration/e2e) and deployment readiness.
 
