@@ -58,6 +58,10 @@ Guidelines:
 - Set requiresConfirmation=true for sensitive actions (login, checkout, payment, data entry)
 - Provide confidence score based on clarity of the command
 - Extract search queries, URLs, and text content accurately
+- For search commands, put the search query in the "value" field
+- For navigation commands, put the URL in the "target" field
+- For click commands, put the element description in the "target" field
+- For type commands, put the text in the "value" field and target element in "target" field
 ${contextPrompt}`;
 
       const result = await generateObject({

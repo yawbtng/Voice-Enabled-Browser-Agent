@@ -32,6 +32,17 @@ export class ObservationExecutor {
 
   async init() {
     await this.stagehand.init();
+    
+    // Navigate to a default page to ensure Stagehand scripts are injected
+    const page = this.stagehand.page;
+    try {
+      await page.goto('https://www.google.com');
+      // Wait for Stagehand scripts to be injected
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(3000);
+    } catch (error) {
+      console.warn('Failed to navigate to default page:', error);
+    }
   }
 
   /**
@@ -119,6 +130,12 @@ export class ObservationExecutor {
     const page = this.stagehand.page;
 
     try {
+      // Wait for page to be ready and Stagehand scripts to be injected
+      await page.waitForLoadState('networkidle');
+      
+      // Wait a bit more for Stagehand scripts to initialize
+      await page.waitForTimeout(2000);
+
       const result = await page.observe({
         instruction,
       });

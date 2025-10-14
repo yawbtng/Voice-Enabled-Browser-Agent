@@ -15,6 +15,16 @@ export class BrowserExecutor {
 
   async init() {
     await this.stagehand.init();
+    
+    // Navigate to a default page to ensure Stagehand scripts are injected
+    const page = this.stagehand.page;
+    try {
+      await page.goto('about:blank');
+      // Wait for Stagehand scripts to be injected
+      await page.waitForTimeout(3000);
+    } catch (error) {
+      console.warn('Failed to navigate to default page:', error);
+    }
   }
 
   async executeAction(intent: Intent): Promise<BrowserAction> {
@@ -31,6 +41,10 @@ export class BrowserExecutor {
       browserAction.status = "running";
       
       const page = this.stagehand.page;
+      
+      // Ensure Stagehand scripts are injected before any action
+      await this.ensureStagehandScripts(page);
+      
       let result: any;
 
       switch (intent.action) {
@@ -100,6 +114,9 @@ export class BrowserExecutor {
 
     try {
       await page.goto(url);
+      // Wait for page to load and Stagehand scripts to be injected
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
     } catch (error) {
       await page.act({
         action: `Navigate to ${url}`,
@@ -168,7 +185,8 @@ export class BrowserExecutor {
   }
 
   private async handleSearch(page: any, intent: Intent) {
-    const query = intent.value;
+    // Try both value and target for search query
+    const query = intent.value || intent.target;
     if (!query) {
       throw new Error("No search query provided");
     }
@@ -214,6 +232,12 @@ export class BrowserExecutor {
     const instruction = intent.value || "Observe the current page and describe what you see";
 
     try {
+      // Wait for page to be ready and Stagehand scripts to be injected
+      await page.waitForLoadState('networkidle');
+      
+      // Wait a bit more for Stagehand scripts to initialize
+      await page.waitForTimeout(2000);
+
       const result = await page.observe({
         instruction,
       });
@@ -254,6 +278,27 @@ export class BrowserExecutor {
       };
     } catch (error) {
       throw new Error(`Failed to take screenshot: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+
+  /**
+   * Ensure Stagehand scripts are properly injected into the page
+   */
+  private async ensureStagehandScripts(page: any): Promise<void> {
+    try {
+      // Check if we're on a blank page and navigate to a real page
+      const currentUrl = page.url();
+      if (currentUrl === 'about:blank' || currentUrl.startsWith('data:')) {
+        await page.goto('https://www.google.com');
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(3000);
+      } else {
+        // Just wait for scripts to be ready
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
+      }
+    } catch (error) {
+      console.warn('Failed to ensure Stagehand scripts:', error);
     }
   }
 

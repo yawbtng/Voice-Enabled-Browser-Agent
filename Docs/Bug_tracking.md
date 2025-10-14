@@ -41,6 +41,60 @@ This document tracks bugs, issues, and their resolutions for the Voice Browser A
 - **Resolution**: Changed import from `{ Mem0 }` to `{ MemoryClient }` and updated type references
 - **Testing**: API endpoint now responds without Mem0 errors
 
+### Issue: Search Query Showing as "undefined" in Action Status
+- **Date**: 2025-01-22
+- **Status**: Resolved
+- **Priority**: High
+- **Component**: Backend/Executor
+- **Description**: Search actions were showing "Search for 'undefined'" in the action status panel
+- **Steps to Reproduce**: 
+  1. Use voice command to search for something
+  2. Action status shows "Search for 'undefined'" instead of actual query
+- **Expected Behavior**: Should show the actual search query
+- **Actual Behavior**: Shows "undefined" as the search query
+- **Root Cause**: Search query extraction was only looking at `intent.value` but AI might put search query in `intent.target`
+- **Resolution**: 
+  1. Modified `handleSearch` method to check both `intent.value` and `intent.target` for search query
+  2. Updated AI prompt to be more specific about where to put search queries (in "value" field)
+- **Testing**: Search queries now properly extracted from voice commands
+
+### Issue: Stagehand Observation Failing with "getScrollableElementXpaths is not a function"
+- **Date**: 2025-01-22
+- **Status**: Resolved
+- **Priority**: High
+- **Component**: Backend/Observer
+- **Description**: Stagehand observation was failing with repeated errors about missing window functions
+- **Steps to Reproduce**: 
+  1. Try to observe page elements
+  2. Console shows repeated errors: "TypeError: window.getScrollableElementXpaths is not a function"
+- **Expected Behavior**: Page observation should work without errors
+- **Actual Behavior**: Observation fails with script injection errors
+- **Root Cause**: Stagehand scripts weren't fully injected before observation attempts
+- **Resolution**: 
+  1. Added `waitForLoadState('networkidle')` before observation
+  2. Added 2-second wait for Stagehand scripts to initialize
+  3. Applied fix to both executor and observer classes
+- **Testing**: Observation now works without script injection errors
+
+### Issue: Stagehand Script Injection Failures - "processDom is not a function"
+- **Date**: 2025-01-22
+- **Status**: Resolved
+- **Priority**: High
+- **Component**: Backend/Stagehand
+- **Description**: Stagehand actions failing with "TypeError: window.processDom is not a function" errors
+- **Steps to Reproduce**: 
+  1. Try to execute any browser action
+  2. Console shows repeated errors about missing Stagehand functions
+- **Expected Behavior**: Stagehand actions should work without script injection errors
+- **Actual Behavior**: Actions fail due to missing Stagehand scripts
+- **Root Cause**: Stagehand scripts weren't being injected because the page wasn't properly initialized with a real URL
+- **Resolution**: 
+  1. Modified executor and observer initialization to navigate to a real page (Google.com)
+  2. Added proper wait times for script injection after page load
+  3. Added `ensureStagehandScripts()` method to verify scripts are loaded before actions
+  4. Enhanced navigation handler to wait for proper script injection
+- **Testing**: Stagehand actions now work properly with injected scripts
+
 ## Active Issues
 
 ### Issue: TypeScript Module Resolution Errors for Observer Feature
