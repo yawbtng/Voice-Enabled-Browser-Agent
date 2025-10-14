@@ -131,7 +131,7 @@
 
 #### Sub-steps
 - [x] Implement multi-step workflow orchestration with error recovery and retries.
-- [ ] Add Stagehand `extract`-based data extraction with Zod schemas.
+- [x] Add Stagehand `extract`-based data extraction with Zod schemas.
 - [ ] Implement `observe` for semantic mapping and debugging.
 - [ ] Add optional TTS responses and summaries.
 - [ ] Add export options (JSON/CSV) for extracted data.
@@ -152,6 +152,23 @@
 - ✅ Persist workflow state in Mem0 for resume capability
 - ✅ UI shows real-time progress with retry indicators
 - ✅ Comprehensive error handling and logging
+
+#### Implementation Details - Data Extraction
+- **Extraction Schemas**: Predefined Zod schemas for common patterns (articles, products, tables, forms, contacts, jobs, events, lists)
+- **AI Schema Generation**: Natural language to Zod schema conversion with keyword matching and AI fallback
+- **Extraction Executor**: Enhanced executor with retry logic, result persistence, and validation
+- **Memory Integration**: Extraction history tracking and pattern learning via Mem0
+- **UI Components**: ExtractionPanel for results display, SchemaBuilder for visual schema creation
+- **API Integration**: RESTful extraction API with batch support and schema validation
+
+**Key Features Implemented**:
+- ✅ Extract structured data using predefined or AI-generated Zod schemas
+- ✅ Support for 8 common extraction patterns with extensibility
+- ✅ Natural language instruction to schema conversion
+- ✅ Batch extraction with same schema across multiple targets
+- ✅ Extraction history and result persistence in Mem0
+- ✅ Visual schema builder with field customization
+- ✅ Comprehensive TDD test coverage with Jest
 
 ### Stage 4: Polish & Optimization
 **Duration:** 5–7 days

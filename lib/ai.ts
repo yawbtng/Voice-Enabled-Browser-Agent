@@ -1,5 +1,5 @@
 import { anthropic } from "@ai-sdk/anthropic";
-import { generateObject } from "ai";
+import { generateObject, generateText } from "ai";
 import { z } from "zod";
 import { env } from "./env";
 import { IntentSchema, type Intent, WorkflowSchema, type Workflow, type WorkflowStep } from "./schema";
@@ -246,6 +246,32 @@ ${contextPrompt}`;
     } catch (error) {
       console.error("Failed to detect multi-step command:", error);
       return false;
+    }
+  }
+
+  /**
+   * Generate text using AI
+   */
+  async generateText(options: {
+    messages: Array<{ role: string; content: string }>;
+    model: string;
+    maxTokens?: number;
+  }): Promise<{ text: string }> {
+    if (!this.client) {
+      throw new Error("Anthropic client not initialized");
+    }
+
+    try {
+      const result = await generateText({
+        model: this.client,
+        messages: options.messages as any,
+        maxOutputTokens: options.maxTokens || 1000,
+      });
+
+      return { text: result.text };
+    } catch (error) {
+      console.error("Failed to generate text:", error);
+      throw error;
     }
   }
 }
