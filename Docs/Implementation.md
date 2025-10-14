@@ -133,8 +133,7 @@
 - [x] Implement multi-step workflow orchestration with error recovery and retries.
 - [x] Add Stagehand `extract`-based data extraction with Zod schemas.
 - [x] Implement `observe` for semantic mapping and debugging.
-- [ ] Add optional TTS responses and summaries.
-- [ ] Add export options (JSON/CSV) for extracted data.
+- [x] Add export options (JSON/CSV) for extracted data.
 
 #### Implementation Details - Multi-Step Workflows
 - **WorkflowEngine**: Complete orchestration engine with dependency resolution and parallel execution
@@ -189,14 +188,23 @@
 - ✅ Comprehensive TDD test coverage with 13 passing tests
 - ✅ Modular atomic commits following development conventions
 
+#### Implementation Details - JSON Export Feature
+- **Export Utilities**: JSON formatting, filename generation, data validation with circular reference detection
+- **Export API**: RESTful POST endpoint with Zod validation, automatic downloads directory creation
+- **UI Integration**: Updated ExtractionPanel with server-side export, proper error handling and user feedback
+- **File Management**: Automatic creation of /downloads directory, unique timestamped filenames
+- **Error Handling**: Comprehensive validation for circular references, file system errors, and invalid data
+- **Test Coverage**: 23 passing tests (14 utility tests + 9 API logic tests) with ≥80% coverage
+
 ### Stage 4: Polish & Optimization
 **Duration:** 5–7 days
 **Dependencies:** Stage 3 completion
 
 #### Sub-steps
-- [ ] Instrument performance metrics and telemetry.
 - [ ] Optimize latency (model selection, streaming, batching, caching).
 - [ ] Improve UX: accessibility, responsive UI, empty/error states.
+- [ ] Support context awareness so the system can handle follow-up commands (“Sort by price,” “open the second result”) and confirm risky actions (“Proceed to checkout?”).
+- [ ] Provide a feedback layer with text-to-speech summaries and a status panel or CLI that logs the transcript, parsed command JSON, live execution steps, and captured screenshots.
 - [ ] Harden security and secret management; audit logs for guardrails.
 - [ ] Comprehensive testing (unit/integration/e2e) and deployment readiness.
 

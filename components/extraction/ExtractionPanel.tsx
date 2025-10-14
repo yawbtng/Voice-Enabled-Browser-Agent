@@ -129,21 +129,41 @@ export function ExtractionPanel({ sessionId, onExtract, className }: ExtractionP
     }
   };
 
-  const handleDownloadData = (data: any, filename: string) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${filename}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: 'Downloaded',
-      description: 'Data downloaded successfully',
-    });
+  const handleDownloadData = async (data: any, filename: string) => {
+    try {
+      const response = await fetch('/api/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: data,
+          filename: filename,
+          format: 'json'
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: 'Exported',
+          description: `Data exported to ${result.filePath}`,
+        });
+      } else {
+        toast({
+          title: 'Export Failed',
+          description: result.error || 'Failed to export data',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Export Error',
+        description: 'Failed to export data',
+        variant: 'destructive',
+      });
+    }
   };
 
   const toggleRawData = (extractionId: string) => {
@@ -301,7 +321,7 @@ export function ExtractionPanel({ sessionId, onExtract, className }: ExtractionP
                                 onClick={() => handleDownloadData(extraction.data, `extraction-${extraction.id}`)}
                               >
                                 <Download className="h-4 w-4 mr-2" />
-                                Download
+                                Export JSON
                               </Button>
                             </div>
                             
