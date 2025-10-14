@@ -6,7 +6,7 @@ import path from 'path';
 
 // Request schema for export API
 const ExportRequestSchema = z.object({
-  data: z.any().min(1, 'Data is required'),
+  data: z.any(),
   filename: z.string().optional(),
   format: z.enum(['json']).default('json'),
 });
