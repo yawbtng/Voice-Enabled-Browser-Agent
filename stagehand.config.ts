@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const StagehandConfig: ConstructorParams = {
-  env: "LOCAL",
+  env: "BROWSERBASE",
   apiKey: process.env.BROWSERBASE_API_KEY /* API key for authentication */,
   projectId: process.env.BROWSERBASE_PROJECT_ID /* Project identifier */,
   debugDom: true /* Enable DOM debugging features */,
