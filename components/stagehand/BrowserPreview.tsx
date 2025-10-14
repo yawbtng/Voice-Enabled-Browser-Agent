@@ -53,7 +53,7 @@ export default function BrowserPreview({
   if (!debugUrl && env === "LOCAL") {
     return (
       <Card className={`${className} ${isFullscreen ? 'fixed inset-0 z-50 m-0 rounded-none' : ''}`}>
-        <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden text-wrap border border-gray-200">
+        <div className="w-full aspect-[16/10] bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden text-wrap border border-gray-200">
           <div className="text-center p-8 max-w-full whitespace-normal break-words">
             <Monitor className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">Local Mode</h3>
@@ -78,7 +78,7 @@ export default function BrowserPreview({
   if (!debugUrl && isLoading) {
     return (
       <Card className={`${className} ${isFullscreen ? 'fixed inset-0 z-50 m-0 rounded-none' : ''}`}>
-        <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden text-wrap">
+        <div className="w-full aspect-[16/10] bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden text-wrap">
           <div className="text-center p-8 max-w-full whitespace-normal break-words">
             <Loader2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground animate-spin" />
             <h3 className="text-lg font-semibold mb-2">Loading Browser Session</h3>
@@ -94,7 +94,7 @@ export default function BrowserPreview({
   if (!debugUrl) {
     return (
       <Card className={`${className} ${isFullscreen ? 'fixed inset-0 z-50 m-0 rounded-none' : ''}`}>
-        <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden text-wrap border border-gray-200">
+        <div className="w-full aspect-[16/10] bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden text-wrap border border-gray-200">
           <div className="text-center p-8 max-w-full whitespace-normal break-words">
             <Monitor className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No Browser Session</h3>
@@ -164,7 +164,7 @@ export default function BrowserPreview({
           className={`w-full border-0 ${
             isFullscreen 
               ? 'h-[calc(100vh-80px)]' 
-              : 'aspect-video'
+              : 'aspect-[16/10]'
           }`}
           onLoad={handleIframeLoad}
           onError={handleIframeError}
