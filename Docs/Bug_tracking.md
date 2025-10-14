@@ -43,6 +43,29 @@ This document tracks bugs, issues, and their resolutions for the Voice Browser A
 
 ## Active Issues
 
+### Issue: TypeScript Module Resolution Errors for Observer Feature
+- **Date**: 2025-01-22
+- **Status**: Resolved
+- **Priority**: High
+- **Component**: TypeScript/Modules
+- **Description**: IDE showing "Cannot find module '@/app/(agent)/observer'" and "@/lib/observation-schemas" errors
+- **Root Cause**: Interface definition location mismatch and unused import cleanup needed
+- **Resolution**: 
+  1. Moved `ObservationRequestOptions` interface to correct location in observer.ts
+  2. Cleaned up unused imports from various files
+  3. Fixed import paths and type definitions
+- **Testing**: TypeScript compilation now passes with `pnpm tsc --noEmit`
+
+### Issue: ESLint Errors Preventing Build
+- **Date**: 2025-01-22
+- **Status**: Resolved
+- **Priority**: Medium
+- **Component**: Linting/Code Quality
+- **Description**: Multiple ESLint errors for unused imports and variables
+- **Root Cause**: Unused imports and variables in observer-related files
+- **Resolution**: Removed unused imports from observer.ts, API routes, and UI components
+- **Testing**: Build process now completes successfully
+
 ### Issue: React Hydration Mismatch Error
 - **Date**: 2025-01-22
 - **Status**: Resolved
