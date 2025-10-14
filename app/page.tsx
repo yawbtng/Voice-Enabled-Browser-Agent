@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import MicButton from "@/components/mic/MicButton";
+import MicButton, { type MicButtonRef } from "@/components/mic/MicButton";
 import StatusPanel from "@/components/status/StatusPanel";
 import ConfirmAction from "@/components/modals/ConfirmAction";
 import { ObservationMap } from "@/components/observation/ObservationMap";
@@ -25,6 +25,7 @@ export default function Home() {
   const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   
+  const micButtonRef = useRef<MicButtonRef>(null);
   const { toast } = useToast();
 
   // Generate sessionId only on client side to avoid hydration mismatch
@@ -33,6 +34,23 @@ export default function Home() {
       setSessionId(`session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
     }
   }, [sessionId]);
+
+  // Global spacebar handler for recording toggle
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      // Only handle spacebar if not typing in an input field
+      if (event.code === 'Space' && 
+          !isProcessing && 
+          !showConfirmation &&
+          !['INPUT', 'TEXTAREA'].includes((event.target as HTMLElement)?.tagName)) {
+        event.preventDefault();
+        micButtonRef.current?.toggleRecording();
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isProcessing, showConfirmation]);
 
   const handleTranscript = useCallback(async (transcript: string, isFinal: boolean) => {
     setCurrentTranscript(transcript);
@@ -185,6 +203,7 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Microphone Control */}
               <MicButton
+                ref={micButtonRef}
                 onTranscript={handleTranscript}
                 onError={handleError}
                 disabled={isProcessing}

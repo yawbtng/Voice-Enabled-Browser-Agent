@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Mic, MicOff, Square, Play } from "lucide-react";
@@ -12,7 +12,11 @@ interface MicButtonProps {
   disabled?: boolean;
 }
 
-export default function MicButton({ onTranscript, onError, disabled = false }: MicButtonProps) {
+export interface MicButtonRef {
+  toggleRecording: () => void;
+}
+
+const MicButton = forwardRef<MicButtonRef, MicButtonProps>(({ onTranscript, onError, disabled = false }, ref) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -142,13 +146,18 @@ export default function MicButton({ onTranscript, onError, disabled = false }: M
     }
   }, [isRecording]);
 
-  const handleToggleRecording = () => {
+  const handleToggleRecording = useCallback(() => {
     if (isRecording) {
       stopRecording();
     } else {
       startRecording();
     }
-  };
+  }, [isRecording, stopRecording, startRecording]);
+
+  // Expose toggleRecording method to parent component
+  useImperativeHandle(ref, () => ({
+    toggleRecording: handleToggleRecording,
+  }), [handleToggleRecording]);
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.code === 'Space' && !disabled) {
@@ -230,4 +239,8 @@ export default function MicButton({ onTranscript, onError, disabled = false }: M
       )}
     </Card>
   );
-}
+});
+
+MicButton.displayName = "MicButton";
+
+export default MicButton;
