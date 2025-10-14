@@ -1,6 +1,6 @@
 import { MemoryClient } from "mem0ai";
 import { env } from "./env";
-import { SessionContextSchema, type SessionContext } from "./schema";
+import { SessionContextSchema, type SessionContext, type Workflow, type WorkflowState } from "./schema";
 
 export class Mem0Client {
   private client: MemoryClient | null = null;
@@ -170,6 +170,162 @@ export class Mem0Client {
       result,
       success,
     });
+  }
+
+  /**
+   * Add workflow execution memory
+   */
+  async addWorkflowMemory(
+    sessionId: string,
+    workflow: Workflow,
+    state: WorkflowState,
+    success: boolean
+  ) {
+    const content = `Workflow: ${workflow.name} - ${success ? "Completed" : "Failed"}`;
+    const metadata = {
+      type: "workflow",
+      workflowId: workflow.id,
+      workflowName: workflow.name,
+      success,
+      status: state.status,
+      completedSteps: state.completedSteps.length,
+      failedSteps: state.failedSteps.length,
+      totalSteps: workflow.steps.length,
+      duration: Date.now() - state.startedAt,
+      error: state.error,
+    };
+
+    return this.addMemory(sessionId, content, metadata);
+  }
+
+  /**
+   * Get workflow history for a session
+   */
+  async getWorkflowHistory(sessionId: string, limit: number = 20) {
+    if (!this.client) {
+      console.warn("Mem0 client not initialized. Returning empty results.");
+      return [];
+    }
+
+    try {
+      const memories = await this.client.search("workflow", {
+        limit,
+        user_id: sessionId,
+        metadata: {
+          type: "workflow",
+        },
+      });
+
+      return memories;
+    } catch (error) {
+      console.error("Failed to get workflow history:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get recovery patterns from failed workflows
+   */
+  async getRecoveryPatterns(sessionId: string) {
+    if (!this.client) {
+      console.warn("Mem0 client not initialized. Returning empty results.");
+      return [];
+    }
+
+    try {
+      const failedWorkflows = await this.client.search("workflow failed", {
+        limit: 50,
+        user_id: sessionId,
+        metadata: {
+          type: "workflow",
+          success: false,
+        },
+      });
+
+      // Extract patterns from failed workflows
+      const patterns = failedWorkflows.map(memory => ({
+        workflowName: memory.metadata?.workflowName,
+        failedSteps: memory.metadata?.failedSteps,
+        error: memory.metadata?.error,
+        timestamp: memory.metadata?.timestamp,
+      }));
+
+      return patterns;
+    } catch (error) {
+      console.error("Failed to get recovery patterns:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get successful workflow patterns
+   */
+  async getSuccessfulPatterns(sessionId: string) {
+    if (!this.client) {
+      console.warn("Mem0 client not initialized. Returning empty results.");
+      return [];
+    }
+
+    try {
+      const successfulWorkflows = await this.client.search("workflow completed", {
+        limit: 50,
+        user_id: sessionId,
+        metadata: {
+          type: "workflow",
+          success: true,
+        },
+      });
+
+      // Extract patterns from successful workflows
+      const patterns = successfulWorkflows.map(memory => ({
+        workflowName: memory.metadata?.workflowName,
+        completedSteps: memory.metadata?.completedSteps,
+        duration: memory.metadata?.duration,
+        timestamp: memory.metadata?.timestamp,
+      }));
+
+      return patterns;
+    } catch (error) {
+      console.error("Failed to get successful patterns:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Resume a workflow from a checkpoint
+   */
+  async resumeWorkflow(sessionId: string, workflowId: string) {
+    if (!this.client) {
+      console.warn("Mem0 client not initialized. Cannot resume workflow.");
+      return null;
+    }
+
+    try {
+      const memories = await this.client.search(`workflow ${workflowId}`, {
+        limit: 1,
+        user_id: sessionId,
+        metadata: {
+          type: "workflow",
+          workflowId,
+        },
+      });
+
+      if (memories.length === 0) {
+        return null;
+      }
+
+      const memory = memories[0];
+      return {
+        workflowId: memory.metadata?.workflowId,
+        lastCheckpoint: memory.metadata?.lastCheckpoint,
+        completedSteps: memory.metadata?.completedSteps || [],
+        failedSteps: memory.metadata?.failedSteps || [],
+        retryCounts: memory.metadata?.retryCounts || {},
+      };
+    } catch (error) {
+      console.error("Failed to resume workflow:", error);
+      throw error;
+    }
   }
 }
 
