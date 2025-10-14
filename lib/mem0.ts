@@ -409,6 +409,119 @@ export class Mem0Client {
       throw error;
     }
   }
+
+  /**
+   * Add observation memory
+   */
+  async addObservationMemory(
+    sessionId: string,
+    instruction: string,
+    data: any,
+    success: boolean
+  ) {
+    const content = `Observation: ${instruction} - ${success ? "Success" : "Failed"}`;
+    const metadata = {
+      type: "observation",
+      instruction,
+      success,
+      timestamp: Date.now(),
+      dataSize: JSON.stringify(data).length,
+      data,
+    };
+
+    return this.addMemory(sessionId, content, metadata);
+  }
+
+  /**
+   * Get observation history for a session
+   */
+  async getObservationHistory(sessionId: string, limit: number = 20) {
+    if (!this.client) {
+      console.warn("Mem0 client not initialized. Returning empty results.");
+      return [];
+    }
+
+    try {
+      const memories = await this.client.search("observation", {
+        limit,
+        user_id: sessionId,
+        metadata: {
+          type: "observation",
+        },
+      });
+
+      return memories.map(memory => ({
+        id: memory.id,
+        instruction: memory.metadata?.instruction,
+        success: memory.metadata?.success,
+        timestamp: memory.metadata?.timestamp,
+        data: memory.metadata?.data,
+      }));
+    } catch (error) {
+      console.error("Failed to get observation history:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get successful observation patterns
+   */
+  async getSuccessfulObservationPatterns(sessionId: string) {
+    if (!this.client) {
+      console.warn("Mem0 client not initialized. Returning empty results.");
+      return [];
+    }
+
+    try {
+      const successfulObservations = await this.client.search("observation success", {
+        limit: 50,
+        user_id: sessionId,
+        metadata: {
+          type: "observation",
+          success: true,
+        },
+      });
+
+      return successfulObservations.map(memory => ({
+        instruction: memory.metadata?.instruction,
+        dataSize: memory.metadata?.dataSize,
+        timestamp: memory.metadata?.timestamp,
+      }));
+    } catch (error) {
+      console.error("Failed to get successful observation patterns:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clear observation history for a session
+   */
+  async clearObservationHistory(sessionId: string) {
+    if (!this.client) {
+      console.warn("Mem0 client not initialized. Cannot clear observation history.");
+      return false;
+    }
+
+    try {
+      const memories = await this.client.search("observation", {
+        limit: 1000,
+        user_id: sessionId,
+        metadata: {
+          type: "observation",
+        },
+      });
+
+      // Delete all observation memories
+      for (const memory of memories) {
+        await this.client.delete(memory.id);
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Failed to clear observation history:", error);
+      throw error;
+    }
+  }
 }
 
 export const mem0Client = new Mem0Client();
