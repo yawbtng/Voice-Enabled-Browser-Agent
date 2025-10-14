@@ -256,6 +256,7 @@ export default function Home() {
               debugUrl={debugUrl}
               env="BROWSERBASE"
               className="w-full"
+              isLoading={isProcessing}
             />
 
             {/* Action Status Section */}

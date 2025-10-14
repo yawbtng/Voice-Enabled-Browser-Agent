@@ -17,19 +17,19 @@ interface BrowserPreviewProps {
   debugUrl?: string | null;
   env: "BROWSERBASE" | "LOCAL";
   className?: string;
+  isLoading?: boolean;
 }
 
 export default function BrowserPreview({ 
   debugUrl, 
   env, 
-  className 
+  className,
+  isLoading = false
 }: BrowserPreviewProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
   const handleRefresh = () => {
-    setIsLoading(true);
     setHasError(false);
     // Force iframe reload by changing key
     const iframe = document.querySelector('iframe[src*="browserbase"]') as HTMLIFrameElement;
@@ -43,12 +43,10 @@ export default function BrowserPreview({
   };
 
   const handleIframeLoad = () => {
-    setIsLoading(false);
     setHasError(false);
   };
 
   const handleIframeError = () => {
-    setIsLoading(false);
     setHasError(true);
   };
 
@@ -77,7 +75,7 @@ export default function BrowserPreview({
     );
   }
 
-  if (!debugUrl) {
+  if (!debugUrl && isLoading) {
     return (
       <Card className={`${className} ${isFullscreen ? 'fixed inset-0 z-50 m-0 rounded-none' : ''}`}>
         <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden text-wrap">
@@ -87,6 +85,23 @@ export default function BrowserPreview({
             <p className="text-muted-foreground">
               Initializing Browserbase session...
             </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!debugUrl) {
+    return (
+      <Card className={`${className} ${isFullscreen ? 'fixed inset-0 z-50 m-0 rounded-none' : ''}`}>
+        <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden text-wrap border border-gray-200">
+          <div className="text-center p-8 max-w-full whitespace-normal break-words">
+            <Monitor className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">No Browser Session</h3>
+            <p className="text-muted-foreground mb-4">
+              Submit a voice command to start a browser session and see live automation.
+            </p>
+            <Badge variant="outline">Ready to Start</Badge>
           </div>
         </div>
       </Card>
