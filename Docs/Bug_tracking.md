@@ -43,6 +43,25 @@ This document tracks bugs, issues, and their resolutions for the Voice Browser A
 
 ## Active Issues
 
+### Issue: React Hydration Mismatch Error
+- **Date**: 2025-01-22
+- **Status**: Resolved
+- **Priority**: High
+- **Component**: Frontend/React
+- **Description**: Hydration failed because server rendered HTML didn't match client due to sessionId generation using Date.now() and Math.random()
+- **Steps to Reproduce**: 
+  1. Load the application in browser
+  2. Hydration error occurs with mismatch in Badge component showing different session IDs
+- **Expected Behavior**: Server and client should render identical HTML
+- **Actual Behavior**: Server renders one sessionId, client renders different sessionId causing hydration mismatch
+- **Root Cause**: sessionId was generated using `Date.now()` and `Math.random()` in useState initializer, which produces different values on server vs client
+- **Resolution**: 
+  1. Changed sessionId from useState initializer to useEffect hook
+  2. Initialize sessionId as empty string in useState
+  3. Generate sessionId only on client side using useEffect
+  4. Added fallback display ('...') for empty sessionId during initial render
+- **Testing**: Hydration error resolved, application loads without console errors
+
 ### Issue: AI Intent Parsing Always Returns "unknown"
 - **Date**: 2025-01-22
 - **Status**: Resolved
