@@ -13,8 +13,11 @@ import { ObservationMap } from "@/components/observation/ObservationMap";
 import { ElementInspector } from "@/components/observation/ElementInspector";
 import BrowserPreview from "@/components/stagehand/BrowserPreview";
 import ScreenshotGallery from "@/components/status/ScreenshotGallery";
+import WorkflowSummary from "@/components/workflow/WorkflowSummary";
+import WorkflowLog from "@/components/workflow/WorkflowLog";
 import { type BrowserAction, type Intent } from "@/lib/schema";
 import { type Element } from "@/lib/observation-schemas";
+import { WorkflowLogEntry, WorkflowSummary as WorkflowSummaryType, createLogEntry } from "@/lib/workflow-log";
 
 export default function Home() {
   const [sessionId, setSessionId] = useState<string>("");
@@ -27,9 +30,46 @@ export default function Home() {
   const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const [debugUrl, setDebugUrl] = useState<string | null>(null);
+  const [workflowLogs, setWorkflowLogs] = useState<WorkflowLogEntry[]>([]);
+  const [workflowSummary, setWorkflowSummary] = useState<WorkflowSummaryType | null>(null);
   
   const micButtonRef = useRef<MicButtonRef>(null);
   const { toast } = useToast();
+
+  // Workflow log helpers
+  const addWorkflowLog = useCallback((entry: WorkflowLogEntry) => {
+    setWorkflowLogs(prev => [...prev, entry]);
+  }, []);
+
+  const clearWorkflowLogs = useCallback(() => {
+    setWorkflowLogs([]);
+    setWorkflowSummary(null);
+  }, []);
+
+  const generateWorkflowSummary = useCallback(async (logs: WorkflowLogEntry[], result: any, transcript?: string) => {
+    try {
+      const response = await fetch('/api/summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logs, result, transcript }),
+      });
+
+      const summaryResult = await response.json();
+      
+      if (summaryResult.success) {
+        setWorkflowSummary(summaryResult.data);
+      } else {
+        throw new Error(summaryResult.error || 'Summary generation failed');
+      }
+    } catch (error) {
+      console.error('Failed to generate workflow summary:', error);
+      toast({
+        title: "Summary Generation Failed",
+        description: "Unable to generate AI summary. Check logs for details.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   // Generate sessionId only on client side to avoid hydration mismatch
   useEffect(() => {
@@ -62,7 +102,12 @@ export default function Home() {
       setIsProcessing(true);
       
       try {
+        // Clear previous logs and start new workflow
+        clearWorkflowLogs();
+        addWorkflowLog(createLogEntry('stt', 'success', `Transcription complete: "${transcript}"`));
+        
         // Parse intent
+        addWorkflowLog(createLogEntry('intent', 'info', 'Parsing user intent...'));
         const intentResponse = await fetch('/api/intent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -72,12 +117,15 @@ export default function Home() {
         const intentResult = await intentResponse.json();
         
         if (!intentResult.success) {
+          addWorkflowLog(createLogEntry('intent', 'error', `Intent parsing failed: ${intentResult.error}`));
           throw new Error(intentResult.error || 'Intent parsing failed');
         }
         
         const intent = intentResult.data;
+        addWorkflowLog(createLogEntry('intent', 'success', `Intent identified: ${intent.action} - ${intent.target || intent.value}`, { confidence: intent.confidence }));
         
         // Execute action
+        addWorkflowLog(createLogEntry('action', 'info', 'Executing browser action...'));
         const actionResponse = await fetch('/api/actions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -87,11 +135,13 @@ export default function Home() {
         const actionResult = await actionResponse.json();
         
         if (!actionResult.success) {
+          addWorkflowLog(createLogEntry('action', 'error', `Action execution failed: ${actionResult.error}`));
           throw new Error(actionResult.error || 'Action execution failed');
         }
         
         // Handle confirmation if required
         if (actionResult.data.requiresConfirmation) {
+          addWorkflowLog(createLogEntry('action', 'warning', 'Action requires user confirmation'));
           setConfirmationIntent(intent);
           setConfirmationPrompt(actionResult.data.confirmationPrompt);
           setShowConfirmation(true);
@@ -104,6 +154,11 @@ export default function Home() {
             setDebugUrl(actionResult.data.debugUrl);
           }
           
+          addWorkflowLog(createLogEntry('execution', 'success', `Action completed: ${actionResult.data.summary}`));
+          
+          // Generate workflow summary
+          await generateWorkflowSummary(workflowLogs, actionResult.data, transcript);
+          
           toast({
             title: "Action Completed",
             description: actionResult.data.summary,
@@ -111,10 +166,12 @@ export default function Home() {
         }
         
       } catch (error) {
-        console.error('Voice command processing error:', error);
+        console.error('Error processing transcript:', error);
+        addWorkflowLog(createLogEntry('error', 'error', `Workflow failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
+        
         toast({
-          title: "Processing Error",
-          description: error instanceof Error ? error.message : "Unknown error",
+          title: "Error",
+          description: error instanceof Error ? error.message : "An unexpected error occurred",
           variant: "destructive",
         });
       } finally {
@@ -122,7 +179,7 @@ export default function Home() {
         setCurrentTranscript("");
       }
     }
-  }, [sessionId, toast]);
+  }, [sessionId, toast, clearWorkflowLogs, addWorkflowLog, generateWorkflowSummary, workflowLogs]);
 
   const handleConfirmAction = useCallback(async () => {
     if (!confirmationIntent) return;
