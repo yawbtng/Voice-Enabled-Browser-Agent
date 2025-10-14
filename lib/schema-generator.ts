@@ -7,7 +7,7 @@ import { EXTRACTION_SCHEMAS, SchemaType, getSchema } from './extraction-schemas'
  */
 
 export interface SchemaGenerationResult {
-  schema: z.ZodSchema<any>;
+  schema: z.ZodObject<any, any, any>;
   schemaType: SchemaType | 'custom';
   confidence: number;
   explanation: string;
@@ -165,10 +165,10 @@ z.object({
 /**
  * Validate extracted data against a schema
  */
-export function validateExtractedData<T>(
-  schema: z.ZodSchema<T>,
+export function validateExtractedData(
+  schema: z.ZodObject<any, any, any>,
   data: unknown
-): { success: true; data: T } | { success: false; error: string } {
+): { success: true; data: any } | { success: false; error: string } {
   try {
     const validatedData = schema.parse(data);
     return { success: true, data: validatedData };
