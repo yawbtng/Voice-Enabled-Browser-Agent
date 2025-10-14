@@ -153,7 +153,7 @@ export class BrowserExecutor {
       if (target) {
         await page.locator(target).scrollIntoViewIfNeeded();
       } else {
-        await page.evaluate((dir) => {
+        await page.evaluate((dir: string) => {
           const scrollAmount = dir === "up" ? -500 : 500;
           window.scrollBy(0, scrollAmount);
         }, direction);

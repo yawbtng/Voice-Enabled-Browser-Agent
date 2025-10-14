@@ -12,7 +12,7 @@ import ConfirmAction from "@/components/modals/ConfirmAction";
 import { type BrowserAction, type Intent } from "@/lib/schema";
 
 export default function Home() {
-  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const [sessionId, setSessionId] = useState<string>("");
   const [actions, setActions] = useState<BrowserAction[]>([]);
   const [currentTranscript, setCurrentTranscript] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -22,6 +22,13 @@ export default function Home() {
   const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
   
   const { toast } = useToast();
+
+  // Generate sessionId only on client side to avoid hydration mismatch
+  useEffect(() => {
+    if (!sessionId) {
+      setSessionId(`session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+    }
+  }, [sessionId]);
 
   const handleTranscript = useCallback(async (transcript: string, isFinal: boolean) => {
     setCurrentTranscript(transcript);
@@ -152,7 +159,7 @@ export default function Home() {
             AI-powered voice-controlled browser automation
           </p>
           <div className="flex justify-center gap-2">
-            <Badge variant="secondary">Session: {sessionId.slice(-8)}</Badge>
+            <Badge variant="secondary">Session: {sessionId ? sessionId.slice(-8) : '...'}</Badge>
             <Badge variant="outline">{actions.length} actions</Badge>
           </div>
         </div>
