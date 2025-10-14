@@ -9,7 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import MicButton from "@/components/mic/MicButton";
 import StatusPanel from "@/components/status/StatusPanel";
 import ConfirmAction from "@/components/modals/ConfirmAction";
+import { ObservationMap } from "@/components/observation/ObservationMap";
+import { ElementInspector } from "@/components/observation/ElementInspector";
 import { type BrowserAction, type Intent } from "@/lib/schema";
+import { type Element } from "@/lib/observation-schemas";
 
 export default function Home() {
   const [sessionId, setSessionId] = useState<string>("");
@@ -20,6 +23,7 @@ export default function Home() {
   const [confirmationPrompt, setConfirmationPrompt] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
+  const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   
   const { toast } = useToast();
 
@@ -149,6 +153,10 @@ export default function Home() {
     });
   }, [toast]);
 
+  const handleElementSelect = useCallback((element: Element) => {
+    setSelectedElement(element);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -166,9 +174,10 @@ export default function Home() {
 
         {/* Main Content */}
         <Tabs defaultValue="control" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="control">Voice Control</TabsTrigger>
             <TabsTrigger value="status">Action Status</TabsTrigger>
+            <TabsTrigger value="observe">Page Observer</TabsTrigger>
             <TabsTrigger value="screenshots">Screenshots</TabsTrigger>
           </TabsList>
 
@@ -217,6 +226,31 @@ export default function Home() {
               actions={actions}
               onScreenshotClick={handleScreenshotClick}
             />
+          </TabsContent>
+
+          <TabsContent value="observe" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Observation Map */}
+              <ObservationMap
+                sessionId={sessionId}
+                onElementSelect={handleElementSelect}
+              />
+              
+              {/* Element Inspector */}
+              {selectedElement ? (
+                <ElementInspector
+                  element={selectedElement}
+                  onClose={() => setSelectedElement(null)}
+                />
+              ) : (
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold mb-4">Element Inspector</h3>
+                  <p className="text-muted-foreground">
+                    Select an element from the observation map to inspect its details.
+                  </p>
+                </Card>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="screenshots">
