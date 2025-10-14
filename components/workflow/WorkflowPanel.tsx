@@ -18,7 +18,7 @@ import {
   Square
 } from "lucide-react";
 import { type WorkflowState, type Workflow } from "@/lib/schema";
-import WorkflowStepCard from "./WorkflowStepCard";
+import WorkflowStepCard from "@/components/workflow/WorkflowStepCard";
 
 interface WorkflowPanelProps {
   workflow?: Workflow;
