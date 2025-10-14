@@ -83,3 +83,85 @@ export const APIResponseSchema = z.object({
 });
 
 export type APIResponse = z.infer<typeof APIResponseSchema>;
+
+// Retry Policy Schema
+export const RetryPolicySchema = z.object({
+  maxAttempts: z.number().min(1).max(10),
+  backoffStrategy: z.enum(["exponential", "linear", "fixed"]),
+  baseDelay: z.number().min(100).max(10000), // milliseconds
+});
+
+export type RetryPolicy = z.infer<typeof RetryPolicySchema>;
+
+// Workflow Step Schema
+export const WorkflowStepSchema = z.object({
+  id: z.string(),
+  action: z.enum([
+    "navigate",
+    "click",
+    "type",
+    "scroll",
+    "search",
+    "extract",
+    "observe",
+    "wait",
+    "screenshot",
+  ]),
+  target: z.string().optional(),
+  value: z.string().optional(),
+  parameters: z.record(z.any()).optional(),
+  confidence: z.number().min(0).max(1).default(1),
+  requiresConfirmation: z.boolean().default(false),
+  retryPolicy: RetryPolicySchema,
+  dependencies: z.array(z.string()).default([]),
+  rollbackHandler: z.string().optional(),
+});
+
+export type WorkflowStep = z.infer<typeof WorkflowStepSchema>;
+
+// Workflow Schema
+export const WorkflowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  steps: z.array(WorkflowStepSchema),
+  createdAt: z.number(),
+  sessionId: z.string(),
+}).refine(
+  (workflow) => {
+    // Validate that all dependencies reference existing step IDs
+    const stepIds = new Set(workflow.steps.map(step => step.id));
+    return workflow.steps.every(step => 
+      step.dependencies.every(dep => stepIds.has(dep))
+    );
+  },
+  {
+    message: "All step dependencies must reference existing step IDs",
+  }
+);
+
+export type Workflow = z.infer<typeof WorkflowSchema>;
+
+// Checkpoint Schema
+export const CheckpointSchema = z.object({
+  stepIndex: z.number(),
+  timestamp: z.number(),
+  data: z.record(z.any()),
+});
+
+export type Checkpoint = z.infer<typeof CheckpointSchema>;
+
+// Workflow State Schema
+export const WorkflowStateSchema = z.object({
+  workflowId: z.string(),
+  currentStepIndex: z.number(),
+  status: z.enum(["pending", "running", "completed", "failed", "cancelled"]),
+  startedAt: z.number(),
+  completedSteps: z.array(z.string()),
+  failedSteps: z.array(z.string()),
+  retryCounts: z.record(z.number()),
+  checkpoints: z.array(CheckpointSchema),
+  error: z.string().optional(),
+});
+
+export type WorkflowState = z.infer<typeof WorkflowStateSchema>;
