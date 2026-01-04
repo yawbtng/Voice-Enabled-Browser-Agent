@@ -63,6 +63,8 @@ Guidelines:
 - For navigation commands, put the URL in the "target" field
 - For click commands, put the element description in the "target" field
 - For type commands, put the text in the "value" field and target element in "target" field
+- The "parameters" field is optional - omit it unless you have specific additional parameters as a valid JSON object
+- Never return parameters as a string - it must be a valid object or omitted
 ${contextPrompt}`;
 
       const result = await generateObject({
@@ -332,17 +334,24 @@ Format as JSON with these fields:
   "recommendations": ["rec1", "rec2", "rec3"]
 }`;
 
-      const aiResult = await generateText({
-        model: this.client,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        maxOutputTokens: 1000,
+      // Define the schema for the summary response
+      const summaryResponseSchema = z.object({
+        status: z.enum(['success', 'partial', 'failed']),
+        title: z.string(),
+        summary: z.string(),
+        keyPoints: z.array(z.string()),
+        errorAnalysis: z.string().optional(),
+        recommendations: z.array(z.string()),
       });
 
-      // Parse the JSON response
-      const summaryData = JSON.parse(aiResult.text);
+      const aiResult = await generateObject({
+        model: this.client,
+        system: systemPrompt,
+        prompt: userPrompt,
+        schema: summaryResponseSchema,
+      });
+
+      const summaryData = aiResult.object;
       
       // Calculate metrics
       const totalSteps = logs.filter(log => ['stt', 'intent', 'action', 'execution'].includes(log.type)).length;

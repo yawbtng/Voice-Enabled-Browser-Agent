@@ -78,6 +78,51 @@ export default function StatusPanel({ actions, onScreenshotClick, className }: S
     }
   };
 
+  const getActionSteps = (action: BrowserAction) => {
+    const steps = [];
+    
+    // Always show the intent step
+    steps.push({
+      id: 'intent',
+      label: 'Intent Parsed',
+      status: 'completed',
+      description: `Understood: ${formatActionDescription(action)}`
+    });
+    
+    // Show execution step based on status
+    if (action.status === 'running') {
+      steps.push({
+        id: 'execution',
+        label: 'Executing Action',
+        status: 'running',
+        description: 'Performing browser automation...'
+      });
+    } else if (action.status === 'success') {
+      steps.push({
+        id: 'execution',
+        label: 'Action Executed',
+        status: 'completed',
+        description: 'Successfully completed'
+      });
+    } else if (action.status === 'failed') {
+      steps.push({
+        id: 'execution',
+        label: 'Action Failed',
+        status: 'failed',
+        description: action.error || 'Unknown error'
+      });
+    } else {
+      steps.push({
+        id: 'execution',
+        label: 'Waiting to Execute',
+        status: 'pending',
+        description: 'Action queued for execution'
+      });
+    }
+    
+    return steps;
+  };
+
   return (
     <Card className={`${className} h-96`}>
       <div className="flex items-center justify-between p-4 border-b">
@@ -99,60 +144,92 @@ export default function StatusPanel({ actions, onScreenshotClick, className }: S
               actions
                 .slice()
                 .reverse()
-                .map((action) => (
-                  <div
-                    key={action.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-shrink-0 mt-0.5">
-                      {getStatusIcon(action.status)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge 
-                          variant="secondary" 
-                          className={`text-xs ${getStatusColor(action.status)}`}
-                        >
-                          {action.status}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {formatTimestamp(action.timestamp)}
-                        </span>
+                .map((action) => {
+                  const steps = getActionSteps(action);
+                  
+                  return (
+                    <div
+                      key={action.id}
+                      className="p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                    >
+                      {/* Action Header */}
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          {getStatusIcon(action.status)}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${getStatusColor(action.status)}`}
+                            >
+                              {action.status}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {formatTimestamp(action.timestamp)}
+                            </span>
+                          </div>
+                          
+                          <p className="text-sm font-medium">
+                            {formatActionDescription(action)}
+                          </p>
+                        </div>
+                        
+                        {action.screenshot && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onScreenshotClick?.(action.screenshot!)}
+                            className="flex-shrink-0"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                       
-                      <p className="text-sm font-medium mb-1">
-                        {formatActionDescription(action)}
-                      </p>
+                      {/* Step Progress */}
+                      <div className="ml-7 space-y-2">
+                        {steps.map((step, index) => (
+                          <div key={step.id} className="flex items-center gap-2">
+                            <div className="flex-shrink-0">
+                              {step.status === 'completed' ? (
+                                <CheckCircle className="h-3 w-3 text-green-500" />
+                              ) : step.status === 'running' ? (
+                                <Loader2 className="h-3 w-3 text-blue-500 animate-spin" />
+                              ) : step.status === 'failed' ? (
+                                <XCircle className="h-3 w-3 text-red-500" />
+                              ) : (
+                                <Clock className="h-3 w-3 text-gray-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-muted-foreground">
+                                {step.label}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {step.description}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                       
-                      {action.error && (
-                        <p className="text-xs text-red-600 dark:text-red-400 mb-2">
-                          Error: {action.error}
-                        </p>
-                      )}
-                      
+                      {/* Result Display */}
                       {action.result && (
-                        <div className="text-xs text-muted-foreground">
-                          {typeof action.result === 'string' 
-                            ? action.result 
-                            : JSON.stringify(action.result, null, 2)
-                          }
+                        <div className="ml-7 mt-2 p-2 rounded bg-muted/50">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Result:</p>
+                          <div className="text-xs text-muted-foreground font-mono">
+                            {typeof action.result === 'string' 
+                              ? action.result 
+                              : JSON.stringify(action.result, null, 2)
+                            }
+                          </div>
                         </div>
                       )}
                     </div>
-                    
-                    {action.screenshot && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onScreenshotClick?.(action.screenshot!)}
-                        className="flex-shrink-0"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))
+                  );
+                })
             )}
           </div>
         </ScrollArea>

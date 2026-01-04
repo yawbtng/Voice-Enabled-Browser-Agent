@@ -290,11 +290,29 @@ export default function Home() {
                   )}
                   
                   {isProcessing && (
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Processing voice command...
-                      </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          Processing voice command...
+                        </p>
+                      </div>
+                      
+                      {/* Processing Steps */}
+                      <div className="ml-4 space-y-1">
+                        <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                          <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                          <span>Converting speech to text...</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                          <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                          <span>Analyzing intent...</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                          <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                          <span>Preparing browser action...</span>
+                        </div>
+                      </div>
                     </div>
                   )}
                   

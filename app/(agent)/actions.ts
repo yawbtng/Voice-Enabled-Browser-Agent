@@ -51,12 +51,18 @@ export async function POST(request: NextRequest) {
     // Generate action summary
     const summary = await aiClient.generateActionSummary(validatedIntent, result.result);
 
+    // Try to get debug URL, refresh if not available
+    let debugUrl = executor.getDebugUrl();
+    if (!debugUrl) {
+      debugUrl = await executor.refreshDebugUrl();
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         action: result,
         summary,
-        debugUrl: executor.getDebugUrl(),
+        debugUrl,
       },
       timestamp: Date.now(),
     });
@@ -110,12 +116,18 @@ export async function PUT(request: NextRequest) {
     // Generate action summary
     const summary = await aiClient.generateActionSummary(validatedIntent, result.result);
 
+    // Try to get debug URL, refresh if not available
+    let debugUrl = executor.getDebugUrl();
+    if (!debugUrl) {
+      debugUrl = await executor.refreshDebugUrl();
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         action: result,
         summary,
-        debugUrl: executor.getDebugUrl(),
+        debugUrl,
       },
       timestamp: Date.now(),
     });

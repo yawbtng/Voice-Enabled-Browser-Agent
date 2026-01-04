@@ -8,6 +8,7 @@ import { aiClient } from "@/lib/ai";
 export class BrowserExecutor {
   private stagehand: Stagehand;
   private sessionId: string;
+  private browserbaseSessionId: string | null = null;
   private debugUrl: string | null = null;
 
   constructor(sessionId: string) {
@@ -18,15 +19,71 @@ export class BrowserExecutor {
   async init() {
     await this.stagehand.init();
     
-    // Capture debug URL from Browserbase session
+    // Get the actual Browserbase session ID from Stagehand
     try {
       if (StagehandConfig.env === "BROWSERBASE") {
-        const browserbase = new Browserbase(StagehandConfig);
-        const debugUrl = await browserbase.sessions.debug(this.sessionId);
-        this.debugUrl = debugUrl.debuggerFullscreenUrl;
+        // Try multiple ways to get the session ID from Stagehand
+        const context = this.stagehand.context;
+        
+        // Method 1: Check context
+        if (context && (context as any).sessionId) {
+          this.browserbaseSessionId = (context as any).sessionId;
+        }
+        
+        // Method 2: Check if Stagehand has a sessionId property
+        if (!this.browserbaseSessionId && (this.stagehand as any).sessionId) {
+          this.browserbaseSessionId = (this.stagehand as any).sessionId;
+        }
+        
+        // Method 3: Try to get from Browserbase API (list recent sessions)
+        if (!this.browserbaseSessionId) {
+          try {
+            const browserbase = new Browserbase(StagehandConfig);
+            const sessions = await browserbase.sessions.list();
+            if (sessions && sessions.length > 0) {
+              // Get the most recent session
+              const latestSession = sessions.sort((a, b) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              )[0];
+              this.browserbaseSessionId = latestSession.id;
+            }
+          } catch (apiError) {
+            console.warn('Failed to get sessionId from Browserbase API:', apiError);
+          }
+        }
+        
+        console.log('Browserbase session ID found:', this.browserbaseSessionId);
+        
+        // If we have the session ID, try to get the debug URL
+        if (this.browserbaseSessionId) {
+          const browserbase = new Browserbase(StagehandConfig);
+          
+          // Wait a bit for the session to be fully initialized
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          try {
+            const debugUrl = await browserbase.sessions.debug(this.browserbaseSessionId);
+            this.debugUrl = debugUrl.debuggerFullscreenUrl;
+            console.log('Debug URL obtained:', this.debugUrl);
+          } catch (debugError) {
+            console.warn('Debug URL not available yet, will retry later:', debugError);
+            // Set up a retry mechanism
+            setTimeout(async () => {
+              try {
+                const debugUrl = await browserbase.sessions.debug(this.browserbaseSessionId!);
+                this.debugUrl = debugUrl.debuggerFullscreenUrl;
+                console.log('Debug URL obtained on retry:', this.debugUrl);
+              } catch (retryError) {
+                console.warn('Failed to get debug URL after retry:', retryError);
+              }
+            }, 5000);
+          }
+        } else {
+          console.warn('Could not get Browserbase session ID from Stagehand');
+        }
       }
     } catch (error) {
-      console.warn('Failed to get debug URL:', error);
+      console.warn('Failed to initialize Browserbase debug URL:', error);
     }
     
     // Navigate to a default page to ensure Stagehand scripts are injected
@@ -317,6 +374,20 @@ export class BrowserExecutor {
 
   getDebugUrl(): string | null {
     return this.debugUrl;
+  }
+
+  async refreshDebugUrl(): Promise<string | null> {
+    try {
+      if (StagehandConfig.env === "BROWSERBASE" && this.browserbaseSessionId) {
+        const browserbase = new Browserbase(StagehandConfig);
+        const debugUrl = await browserbase.sessions.debug(this.browserbaseSessionId);
+        this.debugUrl = debugUrl.debuggerFullscreenUrl;
+        return this.debugUrl;
+      }
+    } catch (error) {
+      console.warn('Failed to refresh debug URL:', error);
+    }
+    return null;
   }
 
   async close() {

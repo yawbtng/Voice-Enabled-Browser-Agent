@@ -18,9 +18,6 @@ const envSchema = z.object({
   VERCEL_AI_SDK_API_KEY: z.string().optional(),
 });
 
-// Only parse environment variables on server side
-export const env = typeof window === 'undefined' 
-  ? envSchema.parse(process.env)
-  : {} as z.infer<typeof envSchema>;
+export const env = envSchema.parse(process.env);
 
 export type Env = z.infer<typeof envSchema>;

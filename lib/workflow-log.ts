@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type WorkflowLogType = 
   | 'stt'           // Speech-to-Text
   | 'intent'        // Intent Parsing
@@ -23,6 +25,17 @@ export interface WorkflowLogEntry {
   metadata?: Record<string, any>;
   duration?: number; // Duration in milliseconds
 }
+
+// Zod schema for WorkflowLogEntry validation
+export const WorkflowLogEntrySchema = z.object({
+  id: z.string(),
+  timestamp: z.number(),
+  type: z.enum(['stt', 'intent', 'action', 'execution', 'error', 'info', 'debug']),
+  level: z.enum(['debug', 'info', 'success', 'warning', 'error']),
+  message: z.string(),
+  metadata: z.record(z.any()).optional(),
+  duration: z.number().optional(),
+});
 
 export type WorkflowSummaryStatus = 
   | 'success'       // Command completed successfully
