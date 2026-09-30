@@ -1,5 +1,8 @@
 # 🎤 Voice Browser Agent
 
+> **This was v1.** The successor is [F.R.I.D.A.Y](https://github.com/yawbtng/F.R.I.D.A.Y) — same voice-to-browser idea, rebuilt as a ~20-browser parallel swarm with live reporting.
+
+
 An AI-powered voice-controlled browser automation system that converts speech to structured commands and executes them using browser automation.
 
 ## Features
@@ -188,5 +191,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Deepgram](https://deepgram.com/) for speech-to-text
 - [Anthropic](https://www.anthropic.com/) for AI capabilities
 - [shadcn/ui](https://ui.shadcn.com/) for UI components
-
-
